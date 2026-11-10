@@ -63,7 +63,12 @@ public class Main {
         }
         """;
 
-    private static World loadOrCreateWorld(Integer slot) {
+    private static final class LoadedWorld {
+        final World world; final SaveManager.SaveData save;
+        LoadedWorld(World world, SaveManager.SaveData save) { this.world = world; this.save = save; }
+    }
+
+    private static LoadedWorld loadOrCreateWorld(Integer slot) {
         SaveManager.setSlot(slot);
         SaveManager.SaveData save = SaveManager.load();
         if (save != null) {
@@ -76,7 +81,7 @@ public class Main {
                     i++;
                 }
             w.rebuildAll();
-            return w;
+            return new LoadedWorld(w, save);
         } else {
             World w = new World(12345);
             w.inventory.addBlock(BlockType.PLANKS, 64);
@@ -85,12 +90,11 @@ public class Main {
             w.inventory.addItem(ItemType.WOODEN_AXE, 1);
             w.inventory.addItem(ItemType.WOODEN_SHOVEL, 1);
             w.inventory.addItem(ItemType.STICK, 16);
-            return w;
+            return new LoadedWorld(w, null);
         }
     }
 
-    private static void applySaveTo(GameState gs) {
-        SaveManager.SaveData save = SaveManager.load();
+    private static void applySaveTo(GameState gs, SaveManager.SaveData save) {
         if (save == null) { gs.player.position.set(40f, 40f, 40f); return; }
         for (int i = 0; i < Inventory.TOTAL; i++) {
             int bid = save.invSlots[i][0];
@@ -321,7 +325,8 @@ public class Main {
                 if (act != null) {
                     if (act.startsWith("play:")) {
                         int slot = Integer.parseInt(act.substring(5));
-                        World w = loadOrCreateWorld(slot);
+                        LoadedWorld lw = loadOrCreateWorld(slot);
+                        World w = lw.world;
                         w.drops.setItemAtlas(itemTex);
                         gs.world = w;
                         gs.player = new Player();
@@ -330,7 +335,7 @@ public class Main {
                         gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
                         gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
                         gs.activeSlot = slot;
-                        applySaveTo(gs);
+                        applySaveTo(gs, lw.save);
                         lastPosInit = false;
                         mainMenu.setOpen(false);
                         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);

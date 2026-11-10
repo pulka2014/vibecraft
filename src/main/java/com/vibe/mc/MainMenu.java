@@ -19,6 +19,7 @@ public class MainMenu {
     private int vao, vbo;
     private Screen screen = Screen.MAIN;
     private float mouseX = 0, mouseY = 0;
+    private boolean open = true;
     private final java.util.List<float[]> batch = new java.util.ArrayList<>();
     private int selectedSlot = 1;
     private String pendingAction = null;
@@ -66,8 +67,8 @@ public class MainMenu {
         vbo = GL15.glGenBuffers();
     }
 
-    public boolean isOpen() { return true; } // меню всегда «открыто» до Play
-    public void setOpen(boolean v) { if (!v) screen = Screen.MAIN; }
+    public boolean isOpen() { return open; }
+    public void setOpen(boolean v) { open = v; if (!v) screen = Screen.MAIN; }
     public void setMouse(float nx, float ny) { mouseX = nx; mouseY = ny; }
     public void clearAction() { pendingAction = null; }
     public String pollAction() { String a = pendingAction; pendingAction = null; return a; }
