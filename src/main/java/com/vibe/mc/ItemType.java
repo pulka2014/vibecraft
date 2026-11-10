@@ -14,7 +14,11 @@ public enum ItemType {
     DIAMOND        (10, "textures/diamond.png",       null,      1f),
     DIAMOND_PICKAXE(11, "textures/diamond_pickaxe.png", "pickaxe", 8f),
     DIAMOND_AXE    (12, "textures/diamond_axe.png",    "axe",     8f),
-    DIAMOND_SHOVEL (13, "textures/diamond_shovel.png", "shovel",  8f);
+    DIAMOND_SHOVEL (13, "textures/diamond_shovel.png", "shovel",  8f),
+    IRON_INGOT     (14, "textures/iron_ingot.png",      null,      1f),
+    IRON_PICKAXE   (15, "textures/iron_pickaxe.png",    "pickaxe", 7f),
+    IRON_AXE       (16, "textures/iron_axe.png",        "axe",     7f),
+    IRON_SHOVEL    (17, "textures/iron_shovel.png",     "shovel",  7f);
 
     public final byte id;
     public final String texture;

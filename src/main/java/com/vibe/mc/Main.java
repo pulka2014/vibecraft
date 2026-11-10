@@ -23,6 +23,7 @@ public class Main {
         Hotbar hotbar;
         InventoryScreen invScreen;
         CraftingScreen craftScreen;
+        FurnaceScreen furnaceScreen;
         Integer activeSlot = null;
     }
 
@@ -165,6 +166,7 @@ public class Main {
         gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
         gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
         gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
+        gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
 
         final long win = window;
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
@@ -179,6 +181,7 @@ public class Main {
             pause.setMouse(nx, ny);
             gs.invScreen.setMouse(nx, ny);
             gs.craftScreen.setMouse(nx, ny);
+            gs.furnaceScreen.setMouse(nx, ny);
             if (!mainMenu.isOpen() && !pause.isOpen() && !gs.invScreen.isOpen() && !gs.craftScreen.isOpen()) {
                 gs.player.onMouseMove(x, y);
             }
@@ -195,6 +198,9 @@ public class Main {
             if (key == GLFW.GLFW_KEY_E && !pause.isOpen()) {
                 if (gs.craftScreen.isOpen()) {
                     gs.craftScreen.close();
+                    GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+                } else if (gs.furnaceScreen.isOpen()) {
+                    gs.furnaceScreen.close();
                     GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
                 } else if (gs.invScreen.isOpen()) {
                     gs.invScreen.close();
@@ -258,6 +264,11 @@ public class Main {
                     gs.craftScreen.click(button == GLFW.GLFW_MOUSE_BUTTON_RIGHT);
                 return;
             }
+            if (gs.furnaceScreen.isOpen()) {
+                if (action == GLFW.GLFW_PRESS && (button == GLFW.GLFW_MOUSE_BUTTON_LEFT || button == GLFW.GLFW_MOUSE_BUTTON_RIGHT))
+                    gs.furnaceScreen.click(button == GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+                return;
+            }
             if (pause.isOpen()) {
                 if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT && action == GLFW.GLFW_PRESS) {
                     String clicked = pause.click();
@@ -288,6 +299,13 @@ public class Main {
                 if (target == BlockType.CRAFTING_TABLE) {
                     if (!gs.craftScreen.isOpen()) {
                         gs.craftScreen.open();
+                        GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+                    }
+                    return;
+                }
+                if (target == BlockType.FURNACE) {
+                    if (!gs.furnaceScreen.isOpen()) {
+                        gs.furnaceScreen.open();
                         GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
                     }
                     return;
@@ -334,6 +352,7 @@ public class Main {
                         gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
                         gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
                         gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
+                        gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
                         gs.activeSlot = slot;
                         applySaveTo(gs, lw.save);
                         lastPosInit = false;
@@ -386,6 +405,7 @@ public class Main {
                 gs.world.particles.update(dt);
                 leafDecay.update(dt, gs.world);
                 gs.world.drops.update(dt, gs.world, gs.world.inventory, gs.player.position);
+                if (gs.furnaceScreen.isOpen()) gs.furnaceScreen.updateFurnace();
             }
 
             frames++; fpsTimer += dt;
@@ -428,6 +448,7 @@ public class Main {
             gs.hotbar.render();
             gs.invScreen.render();
             gs.craftScreen.render();
+            gs.furnaceScreen.render();
             if (showDebug[0]) debug.render();
             pause.render();
 

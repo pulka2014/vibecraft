@@ -14,7 +14,8 @@ public enum BlockType {
     COBBLESTONE    (10, 13, 13, 13, 13, 1.5f, "pickaxe"),
     COAL_ORE       (11, 14, 14, 14, 14, 3.0f, "pickaxe"),
     IRON_ORE       (12, 15, 15, 15, 15, 3.0f, "pickaxe"),
-    DIAMOND_ORE    (13, 16, 16, 16, 16, 3.0f, "pickaxe");
+    DIAMOND_ORE    (13, 16, 16, 16, 16, 3.0f, "pickaxe"),
+    FURNACE        (14, 18, 19, 18, 20, 3.5f, "pickaxe");
 
     public final byte id;
     public final int tileTop;

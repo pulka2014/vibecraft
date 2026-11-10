@@ -89,6 +89,7 @@ public class SoundSystem {
             case PLANKS: return "sounds/wood.wav";   // доски звучат как дерево
             case LEAVES: return "sounds/grass.wav";  // листья — как трава
             case CRAFTING_TABLE: return "sounds/wood.wav";
+            case FURNACE: return "sounds/stone.wav";
             case COAL_ORE: case IRON_ORE: case DIAMOND_ORE: case COBBLESTONE: return "sounds/stone.wav";
             case PRESSURE_PLATE: return "sounds/wood.wav";
             default:    return "sounds/stone.wav";

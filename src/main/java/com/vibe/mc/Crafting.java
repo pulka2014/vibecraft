@@ -147,6 +147,33 @@ public class Crafting {
             return new Result(ItemType.STONE_SHOVEL, 1);
         }
 
+
+        // печь: 8 COBBLESTONE вокруг пустого центра
+        if (countNonEmpty(g) == 8
+            && isBlock3(g, 0, 0, BlockType.COBBLESTONE) && isBlock3(g, 1, 0, BlockType.COBBLESTONE) && isBlock3(g, 2, 0, BlockType.COBBLESTONE)
+            && isBlock3(g, 0, 1, BlockType.COBBLESTONE) && isBlock3(g, 2, 1, BlockType.COBBLESTONE)
+            && isBlock3(g, 0, 2, BlockType.COBBLESTONE) && isBlock3(g, 1, 2, BlockType.COBBLESTONE) && isBlock3(g, 2, 2, BlockType.COBBLESTONE)) {
+            return new Result(BlockType.FURNACE, 1);
+        }
+
+        // железная кирка: 3 IRON_INGOT сверху + 2 STICK
+        if (countNonEmpty(g) == 5
+            && isItem3(g, 0, 0, ItemType.IRON_INGOT) && isItem3(g, 1, 0, ItemType.IRON_INGOT) && isItem3(g, 2, 0, ItemType.IRON_INGOT)
+            && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
+            return new Result(ItemType.IRON_PICKAXE, 1);
+        }
+        // железный топор (слева)
+        if (countNonEmpty(g) == 5
+            && isItem3(g, 0, 0, ItemType.IRON_INGOT) && isItem3(g, 1, 0, ItemType.IRON_INGOT) && isItem3(g, 0, 1, ItemType.IRON_INGOT)
+            && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
+            return new Result(ItemType.IRON_AXE, 1);
+        }
+        // железная лопата: 1 IRON_INGOT + 2 STICK
+        if (countNonEmpty(g) == 3
+            && isItem3(g, 1, 0, ItemType.IRON_INGOT)
+            && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
+            return new Result(ItemType.IRON_SHOVEL, 1);
+        }
         return null;
     }
 

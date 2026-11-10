@@ -137,23 +137,23 @@ public class Chunk {
 
         // ============ РУДЫ ============
         java.util.Random oreRng = new java.util.Random(seed * 7L + offsetX * 13L + offsetZ * 17L);
-        // уголь: 5-40, 20 попыток
-        for (int i = 0; i < 20; i++) {
+        // уголь: 5-50, 40 попыток (чаще)
+        for (int i = 0; i < 40; i++) {
+            int ox = oreRng.nextInt(SX), oz = oreRng.nextInt(SZ);
+            int oy = 5 + oreRng.nextInt(45);
+            placeOre(ox, oy, oz, BlockType.COAL_ORE, oreRng, 4 + oreRng.nextInt(5));
+        }
+        // железо: 5-40, 25 попыток (чаще)
+        for (int i = 0; i < 25; i++) {
             int ox = oreRng.nextInt(SX), oz = oreRng.nextInt(SZ);
             int oy = 5 + oreRng.nextInt(35);
-            placeOre(ox, oy, oz, BlockType.COAL_ORE, oreRng, 3 + oreRng.nextInt(4));
+            placeOre(ox, oy, oz, BlockType.IRON_ORE, oreRng, 3 + oreRng.nextInt(4));
         }
-        // железо: 5-30, 10 попыток
-        for (int i = 0; i < 10; i++) {
-            int ox = oreRng.nextInt(SX), oz = oreRng.nextInt(SZ);
-            int oy = 5 + oreRng.nextInt(25);
-            placeOre(ox, oy, oz, BlockType.IRON_ORE, oreRng, 2 + oreRng.nextInt(4));
-        }
-        // алмазы: 1-16, 3 попытки
-        for (int i = 0; i < 3; i++) {
+        // алмазы: 1-16, 8 попыток (чаще)
+        for (int i = 0; i < 8; i++) {
             int ox = oreRng.nextInt(SX), oz = oreRng.nextInt(SZ);
             int oy = 1 + oreRng.nextInt(15);
-            placeOre(ox, oy, oz, BlockType.DIAMOND_ORE, oreRng, 1 + oreRng.nextInt(3));
+            placeOre(ox, oy, oz, BlockType.DIAMOND_ORE, oreRng, 2 + oreRng.nextInt(3));
         }
     }
 
