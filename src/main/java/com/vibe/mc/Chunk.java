@@ -23,6 +23,10 @@ public class Chunk {
 
     public int idx(int x, int y, int z) { return (y * SZ + z) * SX + x; }
     public byte[] rawBlocks() { return blocks.clone(); }
+    public byte[] rawRotations() { return rotations.clone(); }
+    public void setRotationsRaw(byte[] r) {
+        if (r.length == rotations.length) System.arraycopy(r, 0, rotations, 0, rotations.length);
+    }
     public void setRaw(byte[] data) {
         if (data.length != blocks.length) throw new RuntimeException("bad chunk size: " + data.length);
         System.arraycopy(data, 0, blocks, 0, blocks.length);

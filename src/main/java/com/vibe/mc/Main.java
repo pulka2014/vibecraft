@@ -31,7 +31,7 @@ public class Main {
     private static final Vector3f lastPos = new Vector3f();
     private static boolean lastPosInit = false;
 
-    private static final String VERT = """
+        private static final String VERT = """
         #version 330 core
         layout(location=0) in vec3 aPos;
         layout(location=1) in vec2 aUV;
@@ -40,18 +40,15 @@ public class Main {
         uniform mat4 uView;
         uniform mat4 uModel;
         out vec2 vUV;
-        out float vTint;
         void main() {
             vUV = aUV;
-            vTint = aTint;
             gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);
         }
         """;
 
-    private static final String FRAG = """
+        private static final String FRAG = """
         #version 330 core
         in vec2 vUV;
-        in float vTint;
         uniform sampler2D uTex;
         uniform float uSun;
         out vec4 FragColor;
@@ -76,7 +73,10 @@ public class Main {
             for (int cx = 0; cx < World.SIZE; cx++)
                 for (int cz = 0; cz < World.SIZE; cz++) {
                     Chunk c = w.chunks.get(new ChunkPos(cx, cz));
-                    if (c != null && i < save.chunks.length) c.setRaw(save.chunks[i]);
+                    if (c != null && i < save.chunks.length) {
+                        c.setRaw(save.chunks[i]);
+                        if (save.rotations != null && i < save.rotations.length) c.setRotationsRaw(save.rotations[i]);
+                    }
                     i++;
                 }
             w.rebuildAll();

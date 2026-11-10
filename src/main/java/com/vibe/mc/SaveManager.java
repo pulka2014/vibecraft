@@ -11,10 +11,11 @@ public class SaveManager {
         return (currentSlot == null) ? java.nio.file.Paths.get("world.dat") : Worlds.file(currentSlot);
     }
     private static final int MAGIC = 0x56494245; // "VIBE"
-    private static final int VERSION = 4;
+    private static final int VERSION = 5;
 
     public static class SaveData {
         public byte[][] chunks; // 5x5
+        public byte[][] rotations; // 5x5
         public float px, py, pz;
         public float yaw, pitch;
         public int[][] invSlots = new int[Inventory.TOTAL][3];
@@ -24,11 +25,14 @@ public class SaveManager {
     public static void save(World world, Player player, TimeOfDay time) throws IOException {
         SaveData d = new SaveData();
         d.chunks = new byte[World.SIZE * World.SIZE][];
+        d.rotations = new byte[World.SIZE * World.SIZE][];
         int i = 0;
         for (int cx = 0; cx < World.SIZE; cx++) {
             for (int cz = 0; cz < World.SIZE; cz++) {
                 Chunk c = world.chunks.get(new ChunkPos(cx, cz));
-                d.chunks[i++] = (c != null) ? c.rawBlocks() : new byte[Chunk.SX * Chunk.SY * Chunk.SZ];
+                d.chunks[i] = (c != null) ? c.rawBlocks() : new byte[Chunk.SX * Chunk.SY * Chunk.SZ];
+                d.rotations[i] = (c != null) ? c.rawRotations() : new byte[Chunk.SX * Chunk.SY * Chunk.SZ];
+                i++;
             }
         }
         d.px = player.position.x; d.py = player.position.y; d.pz = player.position.z;
@@ -48,6 +52,11 @@ public class SaveManager {
             out.writeInt(VERSION);
             out.writeInt(World.SIZE);
             for (byte[] b : d.chunks) { out.writeInt(b.length); out.write(b); }
+            // rotations
+            for (int ci = 0; ci < d.chunks.length; ci++) {
+                byte[] rot = d.rotations[ci];
+                out.writeInt(rot.length); out.write(rot);
+            }
             out.writeFloat(d.px); out.writeFloat(d.py); out.writeFloat(d.pz);
             out.writeFloat(d.yaw); out.writeFloat(d.pitch);
             for (int[] row : d.invSlots) { out.writeInt(row[0]); out.writeInt(row[1]); out.writeInt(row[2]); }
@@ -71,6 +80,12 @@ public class SaveManager {
                 int len = in.readInt();
                 d.chunks[i] = new byte[len];
                 in.readFully(d.chunks[i]);
+            }
+            d.rotations = new byte[size * size][];
+            for (int i = 0; i < d.rotations.length; i++) {
+                int len = in.readInt();
+                d.rotations[i] = new byte[len];
+                in.readFully(d.rotations[i]);
             }
             d.px = in.readFloat(); d.py = in.readFloat(); d.pz = in.readFloat();
             d.yaw = in.readFloat(); d.pitch = in.readFloat();
