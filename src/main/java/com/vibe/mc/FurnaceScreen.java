@@ -122,6 +122,7 @@ public class FurnaceScreen {
     }
 
     public void click(boolean right) {
+        System.out.println("[Furnace.click] right=" + right + " x=" + mouseX + " y=" + mouseY);
         for (int i = 0; i < 3; i++) {
             float[] r = slotRect(i);
             if (mouseX >= r[0] && mouseX <= r[2] && mouseY >= r[1] && mouseY <= r[3]) {
