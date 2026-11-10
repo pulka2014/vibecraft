@@ -1,0 +1,8 @@
+build/
+.gradle/
+*.class
+latest.log
+world.dat
+world.dat.*
+settings.properties
+*.bak.*
