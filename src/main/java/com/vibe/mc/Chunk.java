@@ -293,7 +293,9 @@ public class Chunk {
                         int baseIdx = verts.size() / 6;
                         float[][] fv = faceVerts[f];
                         float[][] uv = {{u0,v0},{u1,v0},{u1,v1},{u0,v1}};
-                        float tint = 0f; // текстуры уже цветные, vTint не нужен
+                        float tint = 0f;
+                        if (f == 0 && b == BlockType.GRASS) tint = 1f;
+                        else if (b == BlockType.LEAVES) tint = 2f;
 
                         for (int i = 0; i < 4; i++) {
                             verts.add(x + fv[i][0]);
