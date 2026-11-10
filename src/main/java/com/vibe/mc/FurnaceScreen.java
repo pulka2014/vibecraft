@@ -163,10 +163,11 @@ public class FurnaceScreen {
         float totalW = 9 * SLOT + 8 * GAP;
         float startX = -totalW / 2f;
         int col, row;
-        if (i < Inventory.HOTBAR) { col = i; row = 3; }
+        if (i < Inventory.HOTBAR) { col = i; row = 0; }
         else { int m = i - Inventory.HOTBAR; col = m % 9; row = 2 - (m / 9); }
         float x0 = startX + col * (SLOT + GAP);
-        float y0 = -0.1f - row * (SLOT + GAP);
+        // main: -0.10 .. -0.28 (3 ряда), хотбар: -0.42
+        float y0 = (row == 0 ? -0.42f : -0.10f - (row - 1) * (SLOT + GAP));
         return new float[]{x0, y0, x0 + SLOT, y0 + SLOT};
     }
 

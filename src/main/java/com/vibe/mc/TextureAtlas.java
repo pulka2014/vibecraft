@@ -17,27 +17,27 @@ public class TextureAtlas {
     public static final float TILE_U = 1.0f / COUNT; // ширина одного тайла в UV
 
     private static final String[] FILES = {
-        "textures/grass_block_top.png",
-        "textures/dirt.png",
-        "textures/stone.png",
-        "textures/sand.png",
-        "textures/oak_log.png",
-        "textures/oak_log_top.png",
-        "textures/oak_planks.png",
-        "textures/oak_leaves.png",
-        "textures/crafting_table_top.png",
-        "textures/crafting_table_side.png",
-        "textures/crafting_table_front.png",
-        "textures/crafting_table_top.png",  // bottom = top
-        "textures/oak_pressure_plate.png",  // tile 12
-        "textures/cobblestone.png",         // tile 13
-        "textures/coal_ore.png",            // tile 14
-        "textures/iron_ore.png",            // tile 15
-        "textures/diamond_ore.png",         // tile 16
-        "textures/cobblestone.png",         // tile 17 (unused, holder)
-        "textures/furnace_top.png",         // tile 18 (top)
-        "textures/furnace_side.png",        // tile 19 (side)
-        "textures/furnace_front.png"        // tile 20 (front)
+        "textures/grass_block_top.png",     // 0
+        "textures/grass_block_side.png",    // 1
+        "textures/dirt.png",                // 2
+        "textures/stone.png",               // 3
+        "textures/sand.png",                // 4
+        "textures/oak_log.png",             // 5
+        "textures/oak_log_top.png",         // 6
+        "textures/oak_planks.png",          // 7
+        "textures/oak_leaves.png",          // 8
+        "textures/crafting_table_top.png",  // 9
+        "textures/crafting_table_side.png", // 10
+        "textures/crafting_table_front.png",// 11
+        "textures/crafting_table_top.png",  // 12 (bottom)
+        "textures/oak_pressure_plate.png",  // 13
+        "textures/cobblestone.png",         // 14
+        "textures/coal_ore.png",            // 15
+        "textures/iron_ore.png",            // 16
+        "textures/diamond_ore.png",         // 17
+        "textures/furnace_top.png",         // 18
+        "textures/furnace_side.png",        // 19
+        "textures/furnace_front.png"        // 20
     };
 
     public static int create() {
