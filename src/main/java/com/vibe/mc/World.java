@@ -13,6 +13,7 @@ public class World {
     public final ItemDropSystem drops = new ItemDropSystem();
     public final Inventory inventory = new Inventory();
     public final int seed;
+    public final java.util.Set<ChunkPos> pendingRebuild = new java.util.HashSet<>();
 
     public World(int seed) {
         this.seed = seed;
@@ -223,8 +224,17 @@ public class World {
 
     public void rebuildChunkAt(int wx, int wz) {
         int cx = Math.floorDiv(wx, Chunk.SX), cz = Math.floorDiv(wz, Chunk.SZ);
-        Chunk c = chunks.get(new ChunkPos(cx, cz));
-        if (c != null) c.buildMesh();
+        pendingRebuild.add(new ChunkPos(cx, cz));
+    }
+
+    /** Вызывается из основного цикла (до рендера) — пересобирает все отложенные меши. */
+    public void flushRebuilds() {
+        if (pendingRebuild.isEmpty()) return;
+        for (ChunkPos pos : pendingRebuild) {
+            Chunk c = chunks.get(pos);
+            if (c != null) c.buildMesh();
+        }
+        pendingRebuild.clear();
     }
 
     public void render(Matrix4f proj, Matrix4f view, int uProj, int uView, int uModel,

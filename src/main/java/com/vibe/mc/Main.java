@@ -381,6 +381,7 @@ public class Main {
             }
 
             // ---- игра ----
+            gs.world.flushRebuilds();
             if (!pause.isOpen()) {
                 gs.time.update(dt);
                 gs.player.update(window, gs.world, dt);

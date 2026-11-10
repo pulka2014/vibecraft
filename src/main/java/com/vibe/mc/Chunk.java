@@ -329,6 +329,8 @@ public class Chunk {
         fb.flip();
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_STATIC_DRAW);
         MemoryUtil.memFree(fb);
+        int e1 = org.lwjgl.opengl.GL11.glGetError();
+        if (e1 != 0) Logger.error("[Chunk] glBufferData VBO error 0x" + Integer.toHexString(e1) + " verts=" + verts.size());
 
         IntBuffer ib = MemoryUtil.memAllocInt(inds.size());
         for (int i = 0; i < inds.size(); i++) ib.put(inds.get(i));
@@ -336,6 +338,8 @@ public class Chunk {
         GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
         GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, ib, GL15.GL_STATIC_DRAW);
         MemoryUtil.memFree(ib);
+        int e2 = org.lwjgl.opengl.GL11.glGetError();
+        if (e2 != 0) Logger.error("[Chunk] glBufferData EBO error 0x" + Integer.toHexString(e2) + " idx=" + inds.size());
 
         int stride = 6 * 4;
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, stride, 0L);

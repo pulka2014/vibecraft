@@ -165,6 +165,8 @@ public class ItemDropSystem {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, itemAtlasTex);
                 GL20.glUniform1f(uUVOffset, it.item.id * ItemAtlas.TILE_U);
+                if (it.item == ItemType.COAL) GL20.glUniform3f(uTintColor, 1.3f, 1.3f, 1.3f);
+                else GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
                 float s = 0.25f;
                 float[] verts = {
                     -s, -s, 0, 0f, 1f,
