@@ -113,7 +113,7 @@ public class MainMenu {
             case MAIN -> {
                 float cx = 0f;
                 float w = 0.42f, h = 0.08f, gap = 0.02f;
-                float y = 0.05f;
+                float y = 0.30f;
                 if (hover(cx-w/2, y-h/2, cx+w/2, y+h/2)) { screen = Screen.SINGLEPLAYER; return; }
                 y -= (h + gap);
                 if (hover(cx-w/2, y-h/2, cx+w/2, y+h/2)) { screen = Screen.SETTINGS; return; }
@@ -267,12 +267,19 @@ public class MainMenu {
         String title = "VibeCraft";
         float th = 0.13f;
         float tw = font.width(title, th);
-        font.drawStringColored(title, -tw/2f + 0.004f, 0.55f - 0.004f, th, 0.25f, 0.20f, 0.0f, 1.0f);
-        font.drawStringColored(title, -tw/2f, 0.55f, th, 1.0f, 1.0f, 0.2f, 1.0f);
-        float sh = 0.028f;
-        font.drawStringColored(splash, 0.06f, 0.50f, sh, 1.0f, 1.0f, 0.2f, 1.0f);
+        // тень
+        font.drawStringColored(title, -tw/2f + 0.004f, 0.62f - 0.004f, th, 0.25f, 0.20f, 0.0f, 1.0f);
+        // жёлтый
+        font.drawStringColored(title, -tw/2f, 0.62f, th, 1.0f, 1.0f, 0.2f, 1.0f);
+        // splash ниже и правее — «выныривает» из-под заголовка, как в MC
+        float sh = 0.026f;
+        float sx = tw/2f - 0.02f;           // правее правого края заголовка
+        float sy = 0.55f;                    // заметно ниже
+        // тёмная подложка для читаемости
+        font.drawStringColored(splash, sx + 0.0015f, sy - 0.0015f, sh, 0f, 0f, 0f, 1f);
+        font.drawStringColored(splash, sx, sy, sh, 1.0f, 1.0f, 0.2f, 1.0f);
         // подписи кнопок
-        float cx = 0f, w = 0.42f, h = 0.08f, gap = 0.02f, y = 0.05f;
+        float cx = 0f, w = 0.42f, h = 0.08f, gap = 0.02f, y = 0.30f;
         String[] labels = {"Singleplayer", "Settings", "Debug", "Quit"};
         for (String lb : labels) {
             float ch = 0.035f;
@@ -345,7 +352,7 @@ public class MainMenu {
         // кнопки
         float cx = 0f;
         float w = 0.42f, h = 0.08f, gap = 0.02f;
-        float y = 0.05f;
+        float y = 0.30f;
         button(cx, y, w, h, "Singleplayer");
         y -= (h + gap);
         button(cx, y, w, h, "Settings");
