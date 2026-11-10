@@ -85,7 +85,7 @@ public class Crafting {
 
         // каменная кирка: 3 камня сверху + 2 палки
         if (countNonEmpty(g) == 5
-            && isBlock3(g, 0, 0, BlockType.STONE) && isBlock3(g, 1, 0, BlockType.STONE) && isBlock3(g, 2, 0, BlockType.STONE)
+            && isBlock3(g, 0, 0, BlockType.COBBLESTONE) && isBlock3(g, 1, 0, BlockType.COBBLESTONE) && isBlock3(g, 2, 0, BlockType.COBBLESTONE)
             && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
             return new Result(ItemType.STONE_PICKAXE, 1);
         }
@@ -104,13 +104,13 @@ public class Crafting {
         }
         // каменный топор (слева)
         if (countNonEmpty(g) == 5
-            && isBlock3(g, 0, 0, BlockType.STONE) && isBlock3(g, 1, 0, BlockType.STONE) && isBlock3(g, 0, 1, BlockType.STONE)
+            && isBlock3(g, 0, 0, BlockType.COBBLESTONE) && isBlock3(g, 1, 0, BlockType.COBBLESTONE) && isBlock3(g, 0, 1, BlockType.COBBLESTONE)
             && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
             return new Result(ItemType.STONE_AXE, 1);
         }
         // каменный топор (справа)
         if (countNonEmpty(g) == 5
-            && isBlock3(g, 1, 0, BlockType.STONE) && isBlock3(g, 2, 0, BlockType.STONE) && isBlock3(g, 2, 1, BlockType.STONE)
+            && isBlock3(g, 1, 0, BlockType.COBBLESTONE) && isBlock3(g, 2, 0, BlockType.COBBLESTONE) && isBlock3(g, 2, 1, BlockType.COBBLESTONE)
             && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
             return new Result(ItemType.STONE_AXE, 1);
         }
@@ -142,7 +142,7 @@ public class Crafting {
         }
         // каменная лопата
         if (countNonEmpty(g) == 3
-            && isBlock3(g, 1, 0, BlockType.STONE)
+            && isBlock3(g, 1, 0, BlockType.COBBLESTONE)
             && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
             return new Result(ItemType.STONE_SHOVEL, 1);
         }
