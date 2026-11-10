@@ -135,10 +135,10 @@ public class MainMenu {
                 }
             }
             case SETTINGS -> {
-                float[] b = settingsButtonRects();
-                for (int i = 0; i < b.length / 2; i++) {
-                    float x0 = b[i*2], y0 = b[i*2+1], x1 = x0 + 0.30f, y1 = y0 + 0.08f;
-                    if (hover(x0, y0, x1, y1)) {
+                float[][] boxes = settingsButtonBoxes();
+                for (int i = 0; i < boxes.length; i++) {
+                    float[] b = boxes[i];
+                    if (hover(b[0], b[1], b[2], b[3])) {
                         Settings st = SettingsHolder.get();
                         switch (i) {
                             case 0 -> st.fov = Math.max(40f, st.fov - 5f);
@@ -156,10 +156,10 @@ public class MainMenu {
                 if (hover(back[0], back[1], back[2], back[3])) { screen = Screen.MAIN; return; }
             }
             case DEBUG -> {
-                float[] b = debugButtonRects();
-                for (int i = 0; i < b.length / 2; i++) {
-                    float x0 = b[i*2], y0 = b[i*2+1], x1 = x0 + 0.40f, y1 = y0 + 0.08f;
-                    if (hover(x0, y0, x1, y1)) {
+                float[][] boxes = debugButtonBoxes();
+                for (int i = 0; i < boxes.length; i++) {
+                    float[] b = boxes[i];
+                    if (hover(b[0], b[1], b[2], b[3])) {
                         switch (i) {
                             case 0 -> pendingAction = "debug:toggle";
                             case 1 -> pendingAction = "debug:xray";
@@ -191,18 +191,29 @@ public class MainMenu {
         return new float[]{x0, y0, x0+w, y0+h};
     }
 
-    private float[] settingsButtonRects() {
-        return new float[]{
-            -0.16f, 0.20f,  0.16f, 0.20f,
-            -0.16f, 0.10f,  0.16f, 0.10f,
-            -0.16f, 0.00f,  0.16f, 0.00f,
+    // Единый источник правды для позиций кнопок настроек/дебага:
+    // возвращает [x0,y0,x1,y1] для каждой кнопки.
+    private float[][] settingsButtonBoxes() {
+        float w = 0.30f, h = 0.08f;
+        float[][] pos = {
+            {-0.32f, 0.20f}, {0.02f, 0.20f},
+            {-0.32f, 0.10f}, {0.02f, 0.10f},
+            {-0.32f, 0.00f}, {0.02f, 0.00f},
         };
+        float[][] out = new float[pos.length][];
+        for (int i = 0; i < pos.length; i++) {
+            out[i] = new float[]{ pos[i][0], pos[i][1], pos[i][0] + w, pos[i][1] + h };
+        }
+        return out;
     }
-    private float[] debugButtonRects() {
-        return new float[]{
-            -0.20f, 0.10f,
-            -0.20f, 0.00f,
-        };
+    private float[][] debugButtonBoxes() {
+        float w = 0.40f, h = 0.08f;
+        float[][] pos = { {-0.20f, 0.10f}, {-0.20f, 0.00f} };
+        float[][] out = new float[pos.length][];
+        for (int i = 0; i < pos.length; i++) {
+            out[i] = new float[]{ pos[i][0], pos[i][1], pos[i][0] + w, pos[i][1] + h };
+        }
+        return out;
     }
 
     public void render() {
@@ -291,10 +302,11 @@ public class MainMenu {
         float th = 0.09f;
         font.drawString(title, -font.width(title, th)/2f, 0.55f, th);
         String[] labels = {"FOV -", "FOV +", "Dist -", "Dist +", "Sens -", "Sens +"};
-        float[][] pos = { {-0.32f,0.20f}, {0.02f,0.20f}, {-0.32f,0.10f}, {0.02f,0.10f}, {-0.32f,0.00f}, {0.02f,0.00f} };
+        // (нет отрисовки кнопок в renderSettings: он только текст, кнопки рисует renderSettingsRects)
+        float[][] boxes = settingsButtonBoxes();
         for (int i = 0; i < labels.length; i++) {
             float ch = 0.03f;
-            font.drawString(labels[i], pos[i][0] + 0.02f, pos[i][1] + 0.04f + ch/2f, ch);
+            font.drawString(labels[i], boxes[i][0] + 0.02f, boxes[i][1] + 0.04f + ch/2f, ch);
         }
         String info = String.format("FOV %.0f   Dist %d   Sens %.2f", st.fov, st.renderDistance, st.mouseSensitivity);
         font.drawString(info, -font.width(info, 0.03f)/2f, -0.50f, 0.03f);
@@ -369,6 +381,11 @@ public class MainMenu {
 
     private void renderSettings() {
         Settings st = SettingsHolder.get();
+        float[][] boxes = settingsButtonBoxes();
+        for (float[] b : boxes) {
+            boolean hov = hover(b[0], b[1], b[2], b[3]);
+            drawButtonRect(b[0], b[1], b[2], b[3], hov);
+        }
         String title = "Settings";
         float th = 0.09f;
         font.drawString(title, -font.width(title, th)/2f, 0.55f, th);
@@ -397,17 +414,18 @@ public class MainMenu {
     }
 
     private void renderDebug() {
+        float[][] boxes = debugButtonBoxes();
+        for (float[] b : boxes) {
+            boolean hov = hover(b[0], b[1], b[2], b[3]);
+            drawButtonRect(b[0], b[1], b[2], b[3], hov);
+        }
         String title = "Debug";
         float th = 0.09f;
         font.drawString(title, -font.width(title, th)/2f, 0.55f, th);
         String[] labels = {"Toggle F3 overlay", "Toggle XRay (F8)"};
-        float[] pos = { -0.20f, 0.10f, -0.20f, 0.00f };
-        for (int i = 0; i < 2; i++) {
-            float x0 = pos[i*2], y0 = pos[i*2+1], x1 = x0 + 0.40f, y1 = y0 + 0.08f;
-            boolean hov = hover(x0, y0, x1, y1);
-            drawButtonRect(x0, y0, x1, y1, hov);
+        for (int i = 0; i < boxes.length; i++) {
             float ch = 0.03f;
-            font.drawString(labels[i], x0 + 0.02f, y0 + 0.04f + ch/2f, ch);
+            font.drawString(labels[i], boxes[i][0] + 0.02f, boxes[i][1] + 0.04f + ch/2f, ch);
         }
         float[] back = { -0.12f, -0.92f, 0.12f, -0.84f };
         boolean hov = hover(back[0], back[1], back[2], back[3]);
