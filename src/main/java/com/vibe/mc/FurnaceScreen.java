@@ -81,9 +81,7 @@ public class FurnaceScreen {
         if (burnTime <= 0) {
             Inventory.Slot fuel = grid[1];
             if (!fuel.isEmpty() && isFuel(fuel)) {
-                BlockType ft = fuel.block;
-                activeFuel = ft;
-                maxBurnTime = fuelFor(ft);
+                maxBurnTime = fuelForSlot(fuel);
                 burnTime = maxBurnTime;
                 fuel.count--; if (fuel.count <= 0) fuel.clear();
             }
@@ -108,9 +106,16 @@ public class FurnaceScreen {
     }
 
     private boolean isFuel(Inventory.Slot s) {
-        return (s.isBlock() && (s.block == BlockType.WOOD || s.block == BlockType.PLANKS));
+        if (s.isBlock() && (s.block == BlockType.WOOD || s.block == BlockType.PLANKS)) return true;
+        if (s.isItem() && s.item == ItemType.COAL) return true;
+        return false;
     }
-    private float fuelFor(BlockType b) { return b == BlockType.WOOD ? 4f : 1.5f; } // WOOD = 4 сек, PLANKS = 1.5
+    private float fuelForSlot(Inventory.Slot s) {
+        if (s.isItem() && s.item == ItemType.COAL) return 8f;
+        if (s.isBlock() && s.block == BlockType.WOOD) return 4f;
+        if (s.isBlock() && s.block == BlockType.PLANKS) return 1.5f;
+        return 0f;
+    }
     private boolean smeltable(Inventory.Slot mat, Inventory.Slot res) {
         return mat.isItem() && mat.item == ItemType.RAW_IRON
             && (res.isEmpty() || (res.isItem() && res.item == ItemType.IRON_INGOT));

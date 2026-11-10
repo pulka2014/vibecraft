@@ -275,7 +275,7 @@ public class Main {
                     if ("Resume".equals(clicked)) { pause.close(); GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED); }
                     if ("Save".equals(clicked)) { try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {} }
                     if ("Settings".equals(clicked)) { pause.openSettings(); }
-                    if ("Quit".equals(clicked)) { GLFW.glfwSetWindowShouldClose(win, true); }
+                    if ("Quit".equals(clicked)) { try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {} GLFW.glfwSetWindowShouldClose(win, true); }
                     if ("settings:back".equals(clicked)) { pause.closeSettings(); }
                 }
                 return;
@@ -456,6 +456,7 @@ public class Main {
             GLFW.glfwPollEvents();
         }
 
+        try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception ignored) {}
         sound.destroy();
         Logger.close();
         GLFW.glfwDestroyWindow(window);

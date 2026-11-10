@@ -24,6 +24,8 @@ public class MainMenu {
     private int selectedSlot = 1;
     private String pendingAction = null;
     private final String splash = pickSplash();
+    private int confirmDeleteSlot = 0;
+    private static final float CF_W = 0.34f, CF_H = 0.30f;
     private final float splashAngle = (float)(new Random().nextDouble() * 40 - 20);
 
     private static final String VERT = """
@@ -123,17 +125,35 @@ public class MainMenu {
                 if (hover(cx-w/2, y-h/2, cx+w/2, y+h/2)) { pendingAction = "quit"; return; }
             }
             case SINGLEPLAYER -> {
+                // confirm-диалог: Yes / No
+                if (confirmDeleteSlot > 0) {
+                    float[] yes = { -0.20f, -0.10f, 0.00f, -0.02f };
+                    float[] no  = {  0.02f, -0.10f, 0.22f, -0.02f };
+                    if (hover(yes[0], yes[1], yes[2], yes[3])) {
+                        Worlds.delete(confirmDeleteSlot);
+                        System.out.println("[MainMenu] delete slot " + confirmDeleteSlot);
+                        confirmDeleteSlot = 0;
+                        return;
+                    }
+                    if (hover(no[0], no[1], no[2], no[3])) { confirmDeleteSlot = 0; return; }
+                    return;
+                }
                 for (int s = 1; s <= Worlds.MAX; s++) {
                     float[] r = slotRect(s);
                     if (hover(r[0], r[1], r[2], r[3])) { selectedSlot = s; pendingAction = "play:" + s; return; }
                 }
+                // New World — кнопка
+                float[] nw = newWorldButtonRect();
+                if (hover(nw[0], nw[1], nw[2], nw[3])) {
+                    int slot = 1;
+                    for (int s = 1; s <= Worlds.MAX; s++) if (!Worlds.exists(s)) { slot = s; break; }
+                    selectedSlot = slot;
+                    Worlds.delete(slot); // пустой слот — на всякий
+                    pendingAction = "play:" + slot;
+                    return;
+                }
                 float[] back = { -0.12f, -0.92f, 0.12f, -0.84f };
                 if (hover(back[0], back[1], back[2], back[3])) { screen = Screen.MAIN; return; }
-                // ПКМ по слоту — удалить (простая защита без confirm)
-                for (int s = 1; s <= Worlds.MAX; s++) {
-                    float[] r = slotRect(s);
-                    if (hover(r[0], r[1], r[2], r[3])) return;
-                }
             }
             case SETTINGS -> {
                 float[][] boxes = settingsButtonBoxes();
@@ -176,10 +196,19 @@ public class MainMenu {
 
     public void rightClick() {
         if (screen != Screen.SINGLEPLAYER) return;
+        if (confirmDeleteSlot > 0) return;
         for (int s = 1; s <= Worlds.MAX; s++) {
             float[] r = slotRect(s);
-            if (hover(r[0], r[1], r[2], r[3])) { pendingAction = "delete:" + s; return; }
+            if (hover(r[0], r[1], r[2], r[3])) {
+                if (Worlds.exists(s)) confirmDeleteSlot = s;
+                return;
+            }
         }
+    }
+
+    private float[] newWorldButtonRect() {
+        float w = 0.30f, h = 0.07f;
+        return new float[]{ -0.15f, -0.10f, -0.15f + w, -0.10f + h };
     }
 
     private float[] slotRect(int slot) {
@@ -372,12 +401,17 @@ public class MainMenu {
         for (int s = 1; s <= Worlds.MAX; s++) {
             float[] r = slotRect(s);
             boolean hov = hover(r[0], r[1], r[2], r[3]);
-            boolean exists = Worlds.exists(s);
             drawButtonRect(r[0], r[1], r[2], r[3], hov);
             String txt = Worlds.label(s);
             float ch = 0.035f;
             font.drawString(txt, r[0] + 0.02f, (r[1]+r[3])/2f + ch/2f, ch);
         }
+        // New World
+        float[] nw = newWorldButtonRect();
+        boolean nwH = hover(nw[0], nw[1], nw[2], nw[3]);
+        drawButtonRect(nw[0], nw[1], nw[2], nw[3], nwH);
+        float ch2 = 0.032f;
+        font.drawString("New World", -font.width("New World", ch2)/2f, (nw[1]+nw[3])/2f + ch2/2f, ch2);
         // Back
         float[] back = { -0.12f, -0.92f, 0.12f, -0.84f };
         boolean hov = hover(back[0], back[1], back[2], back[3]);
@@ -385,6 +419,20 @@ public class MainMenu {
         float ch = 0.035f;
         font.drawString("Back", -font.width("Back", ch)/2f, -0.88f + ch/2f, ch);
         font.drawString("LMB = play, RMB = delete", -0.95f, -0.96f, 0.022f);
+        if (confirmDeleteSlot > 0) {
+            drawQuad(-1, -1, 1, 1, 0, 0, 0, 0.6f);
+            float x0 = -CF_W/2, y0 = -CF_H/2, x1 = x0 + CF_W, y1 = y0 + CF_H;
+            drawQuad(x0, y0, x1, y1, 0.35f, 0.35f, 0.35f, 1f);
+            String q = "Delete slot " + confirmDeleteSlot + "?";
+            float qh = 0.035f;
+            font.drawString(q, -font.width(q, qh)/2f, 0.08f, qh);
+            float[] yes = { -0.20f, -0.10f, 0.00f, -0.02f };
+            float[] no  = {  0.02f, -0.10f, 0.22f, -0.02f };
+            drawButtonRect(yes[0], yes[1], yes[2], yes[3], hover(yes[0], yes[1], yes[2], yes[3]));
+            drawButtonRect(no[0], no[1], no[2], no[3], hover(no[0], no[1], no[2], no[3]));
+            font.drawString("Yes", -0.10f - font.width("Yes", 0.03f)/2f, -0.045f, 0.03f);
+            font.drawString("No",   0.12f - font.width("No", 0.03f)/2f,  -0.045f, 0.03f);
+        }
     }
 
     private void renderSettings() {
