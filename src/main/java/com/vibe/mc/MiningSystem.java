@@ -36,10 +36,17 @@ public class MiningSystem {
         }
         // Жёсткий баланс: правильный инструмент в 5 раз быстрее руки,
         // неправильный — в 4 раза медленнее (как в MC).
+        int heldTier = (heldSlot != null && heldSlot.isItem()) ? heldSlot.item.tier() : -1;
+        int minTier = block.minTier();
         if (heldTool != null && block.toolType != null && block.toolType.equals(heldTool)) {
-            speed = Math.max(speed, 4f) * 1.25f;  // точно быстрее руки
+            if (heldTier >= minTier || minTier < 0) {
+                speed = Math.max(speed, 4f) * 1.25f;  // точно быстрее руки
+            } else {
+                // инструмент есть, но tier ниже требуемого — медленно и без дропа
+                speed = 0.5f;
+            }
         } else if (heldTool != null) {
-            speed = 0.25f;                         // неправильный инструмент — хуже руки
+            speed = 0.25f;
         }
         float hardness = block.hardness;
         if (hardness <= 0) { // мгновенно
@@ -56,15 +63,12 @@ public class MiningSystem {
             Logger.info("[Mining] broke " + block + " held=" + (heldSlot == null ? "null" :
                 (heldSlot.isItem() ? heldSlot.item : heldSlot.block)) + " speed=" + String.format("%.2f", speed)
                 + " perSec=" + String.format("%.2f", perSec) + " hardness=" + hardness);
-            // камень/руда — только киркой (иначе без дропа)
-            // дроп: камень/руды — кирка, листья — ножницы, остальное — всегда
             boolean canDrop = true;
-            if (block == BlockType.STONE || block == BlockType.COAL_ORE
-                || block == BlockType.IRON_ORE || block == BlockType.DIAMOND_ORE) {
-                if (heldSlot == null || !heldSlot.isItem() || heldSlot.item.toolType == null
-                    || !heldSlot.item.toolType.equals("pickaxe")) {
-                    canDrop = false;
-                }
+            if (block.minTier() >= 0) {
+                boolean hasPick = heldSlot != null && heldSlot.isItem()
+                    && heldSlot.item.toolType != null && heldSlot.item.toolType.equals("pickaxe");
+                int tier = (heldSlot != null && heldSlot.isItem()) ? heldSlot.item.tier() : -1;
+                if (!hasPick || tier < block.minTier()) canDrop = false;
             } else if (block == BlockType.LEAVES) {
                 // листья — только ножницами; если ножниц нет — без дропа блока, но с шансом 5% яблоко
                 boolean hasShears = heldSlot != null && heldSlot.isItem() && heldSlot.item.toolType != null

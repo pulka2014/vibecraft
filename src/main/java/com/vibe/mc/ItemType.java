@@ -32,6 +32,16 @@ public enum ItemType {
         this.speed = speed;
     }
 
+    public int tier() {
+        return switch (this) {
+            case WOODEN_PICKAXE, WOODEN_AXE, WOODEN_SHOVEL -> 0;
+            case STONE_PICKAXE, STONE_AXE, STONE_SHOVEL -> 1;
+            case IRON_PICKAXE, IRON_AXE, IRON_SHOVEL -> 2;
+            case DIAMOND_PICKAXE, DIAMOND_AXE, DIAMOND_SHOVEL -> 3;
+            default -> -1;
+        };
+    }
+
     private static final ItemType[] BY_ID = new ItemType[values().length];
     static { for (ItemType t : values()) BY_ID[t.id] = t; }
     public static ItemType byId(byte id) {

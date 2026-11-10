@@ -289,9 +289,7 @@ public class Chunk {
                         int baseIdx = verts.size() / 6;
                         float[][] fv = faceVerts[f];
                         float[][] uv = {{u0,v0},{u1,v0},{u1,v1},{u0,v1}};
-                        float tint = 0f;
-                        if (f == 0 && b == BlockType.GRASS) tint = 1f;
-                        else if (b == BlockType.LEAVES) tint = 2f;
+                        float tint = 0f; // текстуры уже цветные, vTint не нужен
 
                         for (int i = 0; i < 4; i++) {
                             verts.add(x + fv[i][0]);
@@ -309,6 +307,7 @@ public class Chunk {
         }
 
         indexCount = inds.size();
+        if (indexCount == 0) return; // пустой чанк — не трогаем VBO/VAO
 
         if (vao == 0) vao = GL30.glGenVertexArrays();
         if (vbo == 0) vbo = GL15.glGenBuffers();
@@ -349,6 +348,7 @@ public class Chunk {
 
     public void render() {
         if (indexCount == 0) return;
+        if (vao == 0 || vbo == 0 || ebo == 0) return;
         GL30.glBindVertexArray(vao);
         GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
         GL30.glBindVertexArray(0);

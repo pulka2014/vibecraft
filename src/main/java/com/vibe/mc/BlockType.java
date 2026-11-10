@@ -41,6 +41,16 @@ public enum BlockType {
         this.toolType = toolType;
     }
 
+    /** Минимальный tier инструмента для дропа: 0=дерево,1=камень,2=железо,3=алмаз, -1=рука. */
+    public int minTier() {
+        return switch (this) {
+            case STONE, COAL_ORE -> 0;
+            case IRON_ORE, COBBLESTONE, FURNACE -> 1;
+            case DIAMOND_ORE -> 2;
+            default -> -1;
+        };
+    }
+
     public int tileFor(int face) {
         if (face == 0) return tileTop;
         if (face == 1) return tileBottom;

@@ -226,19 +226,20 @@ public class FurnaceScreen {
         GL20.glUniform1i(shader.uniform("uUseTex"), 0);
 
         drawQuad(-1, -1, 1, 1, 0,0,0,0, 0,0,0,0.5f);
+        // слоты печи — тёмные
         for (int i = 0; i < 3; i++) {
             float[] r = slotRect(i);
-            drawQuad(r[0], r[1], r[2], r[3], 0,0,0,0, 0.2f,0.2f,0.2f,0.9f);
+            drawQuad(r[0], r[1], r[2], r[3], 0,0,0,0, 0.1f,0.1f,0.1f,1f);
             drawQuad(r[0], r[1], r[2], r[1]+0.006f, 0,0,0,0, 0.5f,0.5f,0.5f,1);
             drawQuad(r[0], r[3]-0.006f, r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
             drawQuad(r[0], r[1], r[0]+0.006f, r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
             drawQuad(r[2]-0.006f, r[1], r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
             drawIcon(grid[i], r);
         }
-        // инвентарь
+        // инвентарь — светлее
         for (int i = 0; i < Inventory.TOTAL; i++) {
             float[] r = invSlotRect(i);
-            drawQuad(r[0], r[1], r[2], r[3], 0,0,0,0, 0.2f,0.2f,0.2f,0.9f);
+            drawQuad(r[0], r[1], r[2], r[3], 0,0,0,0, 0.22f,0.22f,0.22f,1f);
             drawQuad(r[0], r[1], r[2], r[1]+0.006f, 0,0,0,0, 0.5f,0.5f,0.5f,1);
             drawQuad(r[0], r[3]-0.006f, r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
             drawQuad(r[0], r[1], r[0]+0.006f, r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);

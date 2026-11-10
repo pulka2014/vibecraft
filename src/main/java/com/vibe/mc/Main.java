@@ -57,8 +57,6 @@ public class Main {
         out vec4 FragColor;
         void main() {
             vec4 c = texture(uTex, vUV);
-            if (vTint > 1.5) c.rgb *= vec3(0.25, 0.65, 0.20);
-            else if (vTint > 0.5) c.rgb *= vec3(0.35, 0.85, 0.30);
             c.rgb *= uSun;
             FragColor = c;
         }
@@ -382,7 +380,7 @@ public class Main {
                 gs.time.update(dt);
                 gs.player.update(window, gs.world, dt);
                 boolean leftDown = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
-                if (leftDown && !gs.invScreen.isOpen() && !gs.craftScreen.isOpen()) {
+                if (leftDown && !gs.invScreen.isOpen() && !gs.craftScreen.isOpen() && !gs.furnaceScreen.isOpen() && !pause.isOpen() && !mainMenu.isOpen()) {
                     Inventory.Slot heldSlot = gs.hotbar.selectedSlot();
                     BlockType beforeBreak = null;
                     boolean broke = mining.update(dt, gs.world, gs.player, heldSlot);
