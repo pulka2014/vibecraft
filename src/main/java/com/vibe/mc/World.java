@@ -190,6 +190,15 @@ public class World {
     }
 
     public void placeBlock(int x, int y, int z, BlockType type, Vector3f playerFeet) {
+        placeBlock(x, y, z, type, playerFeet, 0, 0, 1);
+    }
+
+    /**
+     * @param nx,ny,nz — нормаль к грани, на которую смотрит игрок.
+     * Для FURNACE ставим поворот так, чтобы его «лицо» смотрело на игрока.
+     */
+    public void placeBlock(int x, int y, int z, BlockType type, Vector3f playerFeet,
+                           int nx, int ny, int nz) {
         if (isSolid(x, y, z)) return;
         float pw = Player.WIDTH / 2f;
         float pMinX = playerFeet.x - pw, pMaxX = playerFeet.x + pw;
@@ -197,6 +206,18 @@ public class World {
         float pMinZ = playerFeet.z - pw, pMaxZ = playerFeet.z + pw;
         if (pMaxX > x && pMinX < x + 1 && pMaxY > y && pMinY < y + 1 && pMaxZ > z && pMinZ < z + 1) return;
         setBlock(x, y, z, type);
+        if (type == BlockType.FURNACE) {
+            // face (front) должен смотреть на игрока, т.е. -нормаль
+            int fx = -nx, fz = -nz;
+            int rot;
+            if (fx > 0) rot = 1;       // front на +X
+            else if (fx < 0) rot = 3;  // front на -X
+            else if (fz > 0) rot = 0;  // front на +Z
+            else rot = 2;              // front на -Z
+            int cx = Math.floorDiv(x, Chunk.SX), cz = Math.floorDiv(z, Chunk.SZ);
+            Chunk c = chunks.get(new ChunkPos(cx, cz));
+            if (c != null) c.setRotation(Math.floorMod(x, Chunk.SX), y, Math.floorMod(z, Chunk.SZ), rot);
+        }
         rebuildChunkAt(x, z);
     }
 

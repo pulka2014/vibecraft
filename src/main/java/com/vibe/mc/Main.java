@@ -314,7 +314,7 @@ public class Main {
                 if (selBlock == null) return;
                 int px = hit[0] + hit[3], py = hit[1] + hit[4], pz = hit[2] + hit[5];
                 if (hit[3] == 0 && hit[4] == 0 && hit[5] == 0) return;
-                gs.world.placeBlock(px, py, pz, selBlock, gs.player.position);
+                gs.world.placeBlock(px, py, pz, selBlock, gs.player.position, hit[3], hit[4], hit[5]);
                 if (gs.world.isSolid(px, py, pz)) {
                     gs.hotbar.consumeSelected();
                     sound.playPlace(selBlock);
@@ -384,10 +384,11 @@ public class Main {
                 boolean leftDown = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
                 if (leftDown && !gs.invScreen.isOpen() && !gs.craftScreen.isOpen()) {
                     Inventory.Slot heldSlot = gs.hotbar.selectedSlot();
+                    BlockType beforeBreak = null;
                     boolean broke = mining.update(dt, gs.world, gs.player, heldSlot);
                     if (broke) {
-                        int[] h2 = gs.world.raycast(gs.player.getEyePos(), gs.player.getForward(), 6f);
-                        if (h2 != null) sound.playBreak(gs.world.getBlock(h2[0], h2[1], h2[2]));
+                        BlockType broken = mining.getLastBrokenBlock();
+                        if (broken != null) sound.playBreak(broken);
                     }
                 } else {
                     mining.reset();

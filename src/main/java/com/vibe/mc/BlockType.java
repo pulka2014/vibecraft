@@ -9,7 +9,7 @@ public enum BlockType {
     WOOD           (5,  6,  5,  6,  5, 2.0f, "axe"),
     PLANKS         (6,  7,  7,  7,  7, 2.0f, "axe"),
     LEAVES         (7,  8,  8,  8,  8, 0.2f, null),
-    CRAFTING_TABLE (8,  9, 10, 12, 11, 2.5f, "axe"),
+    CRAFTING_TABLE (8,  9, 10,  7, 11, 2.5f, "axe"),
     PRESSURE_PLATE (9, 13, 13, 13, 13, 0.5f, "axe"),
     COBBLESTONE    (10, 14, 14, 14, 14, 1.5f, "pickaxe"),
     COAL_ORE       (11, 15, 15, 15, 15, 3.0f, "pickaxe"),

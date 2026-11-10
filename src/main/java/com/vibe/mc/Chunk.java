@@ -14,6 +14,7 @@ import java.util.List;
 public class Chunk {
     public static final int SX = 16, SY = 64, SZ = 16;
     private final byte[] blocks = new byte[SX * SY * SZ];
+    private final byte[] rotations = new byte[SX * SY * SZ]; // для FURNACE: 0..3
 
     private int vao = 0, vbo = 0, ebo = 0;
     private int indexCount = 0;
@@ -25,6 +26,15 @@ public class Chunk {
     public void setRaw(byte[] data) {
         if (data.length != blocks.length) throw new RuntimeException("bad chunk size: " + data.length);
         System.arraycopy(data, 0, blocks, 0, blocks.length);
+    }
+
+    public int getRotation(int x, int y, int z) {
+        if (x < 0 || x >= SX || y < 0 || y >= SY || z < 0 || z >= SZ) return 0;
+        return rotations[idx(x, y, z)] & 3;
+    }
+    public void setRotation(int x, int y, int z, int rot) {
+        if (x < 0 || x >= SX || y < 0 || y >= SY || z < 0 || z >= SZ) return;
+        rotations[idx(x, y, z)] = (byte)(rot & 3);
     }
 
     public BlockType get(int x, int y, int z) {
@@ -254,7 +264,24 @@ public class Chunk {
                         // плита — прозрачная для граней соседа (x-ray fix)
                         if (neighbor != BlockType.AIR && neighbor != BlockType.PRESSURE_PLATE) continue;
 
-                        int tile = b.tileFor(f);
+                        int tile;
+                        if (b == BlockType.FURNACE) {
+                            int rot = getRotation(x, y, z);
+                            // front-грань у нас face == 2 (dir +Z). Логика:
+                            // rot 0 = front на +Z, 1 = +X, 2 = -Z, 3 = -X.
+                            int frontFace = switch (rot) {
+                                case 0 -> 2;   // +Z
+                                case 1 -> 4;   // +X
+                                case 2 -> 3;   // -Z
+                                default -> 5;  // -X
+                            };
+                            if (f == frontFace) tile = b.tileFront;
+                            else if (f == 0) tile = b.tileTop;      // верх
+                            else if (f == 1) tile = b.tileTop;      // низ тоже top (в MC низ печи = top)
+                            else tile = b.tileSide;
+                        } else {
+                            tile = b.tileFor(f);
+                        }
                         float u0 = tile * TextureAtlas.TILE_U;
                         float u1 = u0 + TextureAtlas.TILE_U;
                         float v0 = 1.0f, v1 = 0.0f;
@@ -311,6 +338,11 @@ public class Chunk {
         GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, stride, 5L * 4L);
         GL20.glEnableVertexAttribArray(2);
         GL30.glBindVertexArray(0);
+        int err = org.lwjgl.opengl.GL11.glGetError();
+        if (err != org.lwjgl.opengl.GL11.GL_NO_ERROR) {
+            Logger.error("[Chunk] GL error after buildMesh: 0x" + Integer.toHexString(err)
+                + " verts=" + (verts.size() / 6) + " idx=" + indexCount);
+        }
 
         Logger.info("[Chunk] mesh " + (verts.size() / 6) + " verts, " + indexCount + " idx");
     }

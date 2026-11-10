@@ -6,6 +6,7 @@ package com.vibe.mc;
 public class MiningSystem {
     private int targetX = -1, targetY = -1, targetZ = -1;
     private float progress = 0f; // 0..1
+    private BlockType lastBrokenBlock = null;
 
     /** Начать/продолжить ломание блока. Возвращает true, если блок сломан. */
     public boolean update(float dt, World world, Player player, Inventory.Slot heldSlot) {
@@ -24,12 +25,21 @@ public class MiningSystem {
 
         // скорость
         float speed = 1f; // рука
+        String heldTool = null;
         if (heldSlot != null && heldSlot.isItem() && heldSlot.item.toolType != null) {
+            heldTool = heldSlot.item.toolType;
             if (block.toolType != null && block.toolType.equals(heldSlot.item.toolType)) {
                 speed = heldSlot.item.speed;
             } else {
-                speed = 1f; // неподходящий инструмент — как рука
+                speed = 1f;
             }
+        }
+        // Жёсткий баланс: правильный инструмент в 5 раз быстрее руки,
+        // неправильный — в 4 раза медленнее (как в MC).
+        if (heldTool != null && block.toolType != null && block.toolType.equals(heldTool)) {
+            speed = Math.max(speed, 4f) * 1.25f;  // точно быстрее руки
+        } else if (heldTool != null) {
+            speed = 0.25f;                         // неправильный инструмент — хуже руки
         }
         float hardness = block.hardness;
         if (hardness <= 0) { // мгновенно
@@ -42,6 +52,10 @@ public class MiningSystem {
         progress += perSec * dt;
 
         if (progress >= 1f) {
+            lastBrokenBlock = block;
+            Logger.info("[Mining] broke " + block + " held=" + (heldSlot == null ? "null" :
+                (heldSlot.isItem() ? heldSlot.item : heldSlot.block)) + " speed=" + String.format("%.2f", speed)
+                + " perSec=" + String.format("%.2f", perSec) + " hardness=" + hardness);
             // камень/руда — только киркой (иначе без дропа)
             // дроп: камень/руды — кирка, листья — ножницы, остальное — всегда
             boolean canDrop = true;
@@ -98,8 +112,10 @@ public class MiningSystem {
     public void reset() {
         targetX = -1; targetY = -1; targetZ = -1;
         progress = 0f;
+        // lastBrokenBlock НЕ сбрасываем — Main должен прочитать после break
     }
 
+    public BlockType getLastBrokenBlock() { return lastBrokenBlock; }
     public boolean isMining() { return targetX != -1; }
     public float getProgress() { return progress; }
     public int getTargetX() { return targetX; }

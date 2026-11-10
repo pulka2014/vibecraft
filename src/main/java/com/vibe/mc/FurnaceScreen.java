@@ -160,14 +160,24 @@ public class FurnaceScreen {
     }
 
     private float[] invSlotRect(int i) {
+        // Точно как в InventoryScreen.slotRect(i):
+        //   хотбар (0..8) -> row 3, y0 = -0.9f
+        //   main (9..35) -> row 2..0, y0 = -0.15f - r*(SLOT+GAP)
         float totalW = 9 * SLOT + 8 * GAP;
         float startX = -totalW / 2f;
-        int col, row;
-        if (i < Inventory.HOTBAR) { col = i; row = 0; }
-        else { int m = i - Inventory.HOTBAR; col = m % 9; row = 2 - (m / 9); }
+        int col;
+        float y0;
+        if (i < Inventory.HOTBAR) {
+            col = i;
+            y0 = -0.9f;
+        } else {
+            int m = i - Inventory.HOTBAR;
+            int c = m % 9;
+            int r = m / 9;
+            col = c;
+            y0 = -0.15f - r * (SLOT + GAP);
+        }
         float x0 = startX + col * (SLOT + GAP);
-        // main: -0.10 .. -0.28 (3 ряда), хотбар: -0.42
-        float y0 = (row == 0 ? -0.42f : -0.10f - (row - 1) * (SLOT + GAP));
         return new float[]{x0, y0, x0 + SLOT, y0 + SLOT};
     }
 
