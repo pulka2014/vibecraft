@@ -162,11 +162,12 @@ public class ItemDropSystem {
             }
             if (it.item != null) {
                 // 2D иконка: UV задаём напрямую (0..TILE_U), без uUVOffset
+                GL11.glEnable(GL11.GL_BLEND);
+                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, itemAtlasTex);
                 GL20.glUniform1f(uUVOffset, it.item.id * ItemAtlas.TILE_U);
-                if (it.item == ItemType.COAL) GL20.glUniform3f(uTintColor, 1.3f, 1.3f, 1.3f);
-                else GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
+                GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
                 float s = 0.25f;
                 float[] verts = {
                     -s, -s, 0, 0f, 1f,
@@ -180,6 +181,7 @@ public class ItemDropSystem {
                     GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
                 }
                 GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
+                GL11.glDisable(GL11.GL_BLEND);
             } else {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
