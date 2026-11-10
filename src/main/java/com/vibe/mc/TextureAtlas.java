@@ -47,9 +47,6 @@ public class TextureAtlas {
         for (int t = 0; t < COUNT; t++) {
             System.out.println("[TextureAtlas] loading " + FILES[t]);
             BufferedImage img = loadPng(FILES[t]);
-            if (img.getWidth() != TILE || img.getHeight() != TILE) {
-                throw new RuntimeException(FILES[t] + " is " + img.getWidth() + "x" + img.getHeight() + ", expected 16x16");
-            }
             int x0 = t * TILE;
             for (int y = 0; y < TILE; y++) {
                 for (int x = 0; x < TILE; x++) {
@@ -82,11 +79,22 @@ public class TextureAtlas {
         return tex;
     }
 
+    private static BufferedImage fallback() {
+        BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++)
+            img.setRGB(x, y, ((x / 4 + y / 4) % 2 == 0) ? 0xFFFF00FF : 0xFF000000);
+        return img;
+    }
+
     private static BufferedImage loadPng(String classpath) {
         try (InputStream in = TextureAtlas.class.getClassLoader().getResourceAsStream(classpath)) {
-            if (in == null) throw new RuntimeException("Resource not found: " + classpath);
+            if (in == null) { Logger.warn("[Texture] not found " + classpath + " — fallback magenta"); return fallback(); }
             BufferedImage img = ImageIO.read(in);
-            if (img == null) throw new RuntimeException("ImageIO returned null for " + classpath);
+            if (img == null) { Logger.warn("[Texture] ImageIO null for " + classpath + " — fallback magenta"); return fallback(); }
+            if (img.getWidth() != 16 || img.getHeight() != 16) {
+                Logger.warn("[Texture] " + classpath + " wrong size " + img.getWidth() + "x" + img.getHeight() + " — fallback magenta");
+                return fallback();
+            }
             // DEBUG average color
             long rr=0, gg=0, bb=0; int n=img.getWidth()*img.getHeight();
             for (int y=0;y<img.getHeight();y++) for (int x=0;x<img.getWidth();x++) {
