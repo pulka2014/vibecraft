@@ -100,43 +100,51 @@ public class ItemDropSystem {
     }
 
     private void drawBlockCube(BlockType type, float size) {
-        int tile = type.tileSide;
-        float tu = TextureAtlas.TILE_U;
-        float u0 = tile * tu, u1 = u0 + tu;
         float s = size * 0.5f;
+        float tu = TextureAtlas.TILE_U;
 
-        float[] v = new float[6 * 4 * 5];
-        int k = 0;
-        float[][][] faces = {
-            {{s,-s, s},{s,-s,-s},{s, s,-s},{s, s, s}},     // +X
-            {{-s,-s,-s},{-s,-s, s},{-s, s, s},{-s, s,-s}}, // -X
-            {{-s, s, s},{s, s, s},{s, s,-s},{-s, s,-s}},   // +Y
-            {{-s,-s,-s},{s,-s,-s},{s,-s, s},{-s,-s, s}},   // -Y
-            {{-s,-s, s},{s,-s, s},{s, s, s},{-s, s, s}},   // +Z
-            {{s,-s,-s},{-s,-s,-s},{-s, s,-s},{s, s,-s}}    // -Z
+        // 6 граней: +X, -X, +Y(top), -Y(bottom), +Z, -Z
+        int[] tiles = {
+            type.tileSide, type.tileSide,
+            type.tileTop,  type.tileBottom,
+            type.tileFront, type.tileSide
         };
-        for (float[][] face : faces) {
-            v[k++] = face[0][0]; v[k++] = face[0][1]; v[k++] = face[0][2]; v[k++] = u0; v[k++] = 1f;
-            v[k++] = face[1][0]; v[k++] = face[1][1]; v[k++] = face[1][2]; v[k++] = u1; v[k++] = 1f;
-            v[k++] = face[2][0]; v[k++] = face[2][1]; v[k++] = face[2][2]; v[k++] = u1; v[k++] = 0f;
-            v[k++] = face[3][0]; v[k++] = face[3][1]; v[k++] = face[3][2]; v[k++] = u0; v[k++] = 0f;
+
+        float[][] faces = {
+            {s,-s, s, 0}, {s,-s,-s, 0}, {s, s,-s, 0}, {s, s, s, 0},      // +X
+            {-s,-s,-s, 0}, {-s,-s, s, 0}, {-s, s, s, 0}, {-s, s,-s, 0}, // -X
+            {-s, s, s, 1}, {s, s, s, 1}, {s, s,-s, 1}, {-s, s,-s, 1},   // +Y (top)
+            {-s,-s,-s, 2}, {s,-s,-s, 2}, {s,-s, s, 2}, {-s,-s, s, 2},   // -Y (bottom)
+            {-s,-s, s, 3}, {s,-s, s, 3}, {s, s, s, 3}, {-s, s, s, 3},   // +Z
+            {s,-s,-s, 4}, {-s,-s,-s, 4}, {-s, s,-s, 4}, {s, s,-s, 4}    // -Z
+        };
+
+        float[] v = new float[24 * 5];
+        int k = 0;
+        for (int f = 0; f < 24; f++) {
+            int faceIdx = f / 4;          // 0..5
+            int tile = tiles[faceIdx];    // какой тайл на этой грани
+            float u0 = tile * tu, u1 = u0 + tu;
+            // в каждом кваде 4 вершины, uv: (u0,v1),(u1,v1),(u1,v0),(u0,v0)
+            float[] xyz = faces[f];
+            float vv = (f % 4 == 0 || f % 4 == 1) ? 0f : 1f;
+            float uu = (f % 4 == 0 || f % 4 == 3) ? u0 : u1;
+            v[k++] = xyz[0]; v[k++] = xyz[1]; v[k++] = xyz[2]; v[k++] = uu; v[k++] = vv;
         }
+
         GL30.glBindVertexArray(vao);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        FloatBuffer fb = MemoryUtil.memAllocFloat(v.length);
+        FloatBuffer fb = org.lwjgl.system.MemoryUtil.memAllocFloat(v.length);
         fb.put(v).flip();
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
-        MemoryUtil.memFree(fb);
+        org.lwjgl.system.MemoryUtil.memFree(fb);
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5*4, 0L);
         GL20.glEnableVertexAttribArray(0);
         GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5*4, 3L*4L);
         GL20.glEnableVertexAttribArray(1);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 4, 4);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 8, 4);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 12, 4);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 16, 4);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 20, 4);
+        for (int i = 0; i < 6; i++) {
+            GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, i*4, 4);
+        }
         GL30.glBindVertexArray(0);
     }
 
