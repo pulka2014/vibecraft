@@ -103,33 +103,38 @@ public class ItemDropSystem {
         float s = size * 0.5f;
         float tu = TextureAtlas.TILE_U;
 
-        // 6 граней: +X, -X, +Y(top), -Y(bottom), +Z, -Z
+        // Индексы тайлов: 0:+X, 1:-X, 2:+Y(top), 3:-Y(bottom), 4:+Z, 5:-Z
         int[] tiles = {
             type.tileSide, type.tileSide,
             type.tileTop,  type.tileBottom,
             type.tileFront, type.tileSide
         };
 
-        float[][] faces = {
-            {s,-s, s, 0}, {s,-s,-s, 0}, {s, s,-s, 0}, {s, s, s, 0},      // +X
-            {-s,-s,-s, 0}, {-s,-s, s, 0}, {-s, s, s, 0}, {-s, s,-s, 0}, // -X
-            {-s, s, s, 1}, {s, s, s, 1}, {s, s,-s, 1}, {-s, s,-s, 1},   // +Y (top)
-            {-s,-s,-s, 2}, {s,-s,-s, 2}, {s,-s, s, 2}, {-s,-s, s, 2},   // -Y (bottom)
-            {-s,-s, s, 3}, {s,-s, s, 3}, {s, s, s, 3}, {-s, s, s, 3},   // +Z
-            {s,-s,-s, 4}, {-s,-s,-s, 4}, {-s, s,-s, 4}, {s, s,-s, 4}    // -Z
+        // Для каждой грани: 4 вершины (x,y,z). UV зададим вручную ниже.
+        float[][][] faces = {
+            {{s,-s, s},{s,-s,-s},{s, s,-s},{s, s, s}},     // +X
+            {{-s,-s,-s},{-s,-s, s},{-s, s, s},{-s, s,-s}}, // -X
+            {{-s, s, s},{s, s, s},{s, s,-s},{-s, s,-s}},   // +Y (top)
+            {{-s,-s,-s},{s,-s,-s},{s,-s, s},{-s,-s, s}},   // -Y (bottom)
+            {{-s,-s, s},{s,-s, s},{s, s, s},{-s, s, s}},   // +Z
+            {{s,-s,-s},{-s,-s,-s},{-s, s,-s},{s, s,-s}}    // -Z
         };
 
-        float[] v = new float[24 * 5];
+        // UV для 4 вершин: (0,1), (1,1), (1,0), (0,0)
+        float[][] uv = {{0,1},{1,1},{1,0},{0,0}};
+
+        float[] v = new float[6 * 4 * 5];
         int k = 0;
-        for (int f = 0; f < 24; f++) {
-            int faceIdx = f / 4;          // 0..5
-            int tile = tiles[faceIdx];    // какой тайл на этой грани
+        for (int f = 0; f < 6; f++) {
+            int tile = tiles[f];
             float u0 = tile * tu, u1 = u0 + tu;
-            // в каждом кваде 4 вершины, uv: (u0,v1),(u1,v1),(u1,v0),(u0,v0)
-            float[] xyz = faces[f];
-            float vv = (f % 4 == 0 || f % 4 == 1) ? 0f : 1f;
-            float uu = (f % 4 == 0 || f % 4 == 3) ? u0 : u1;
-            v[k++] = xyz[0]; v[k++] = xyz[1]; v[k++] = xyz[2]; v[k++] = uu; v[k++] = vv;
+            for (int i = 0; i < 4; i++) {
+                v[k++] = faces[f][i][0];
+                v[k++] = faces[f][i][1];
+                v[k++] = faces[f][i][2];
+                v[k++] = u0 + (u1 - u0) * uv[i][0];
+                v[k++] = uv[i][1]; // 1 = низ, 0 = верх
+            }
         }
 
         GL30.glBindVertexArray(vao);
