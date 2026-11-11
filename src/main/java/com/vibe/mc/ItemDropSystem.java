@@ -22,25 +22,28 @@ public class ItemDropSystem {
     private final Random rng = new Random();
     private int vao, vbo;
     private Shader shader = null;
-    private int uProj = -1, uView = -1, uModel = -1, uTex = -1, uUseAtlas = -1;
+    private int uProj = -1, uView = -1, uModel = -1, uTex = -1, uTint = -1;
 
     private static final String VERT = """
         #version 330 core
         layout(location=0) in vec3 aPos;
         layout(location=1) in vec2 aUV;
+        layout(location=2) in float aTint;
         uniform mat4 uProj, uView, uModel;
         out vec2 vUV;
-        void main() { vUV = aUV; gl_Position = uProj * uView * uModel * vec4(aPos,1.0); }
+        out float vTint;
+        void main() { vUV = aUV; vTint = aTint; gl_Position = uProj * uView * uModel * vec4(aPos,1.0); }
         """;
     private static final String FRAG = """
         #version 330 core
         in vec2 vUV;
+        in float vTint;
         uniform sampler2D uTex;
-        uniform int uUseAtlas;
+        uniform vec3 uTintColor;
         out vec4 FragColor;
         void main() {
             vec4 c = texture(uTex, vUV);
-            if (uUseAtlas == 1) c.rgb *= vec3(0.35, 0.85, 0.30); // tint (не используется)
+            if (vTint > 0.5) c.rgb *= uTintColor;
             FragColor = c;
         }
         """;
@@ -52,11 +55,12 @@ public class ItemDropSystem {
         uView = shader.uniform("uView");
         uModel = shader.uniform("uModel");
         uTex = shader.uniform("uTex");
-        uUseAtlas = shader.uniform("uUseAtlas");
+        uTint = shader.uniform("uTintColor");
         vao = GL30.glGenVertexArrays();
         vbo = GL15.glGenBuffers();
     }
 
+    // === Старые методы ===
     public void spawnItem(int bx, int by, int bz, ItemType item) {
         Vector3f p = new Vector3f(bx + 0.5f, by + 0.5f, bz + 0.5f);
         Vector3f v = new Vector3f((rng.nextFloat() - 0.5f) * 1.5f, 2.5f, (rng.nextFloat() - 0.5f) * 1.5f);
@@ -66,6 +70,14 @@ public class ItemDropSystem {
         Vector3f p = new Vector3f(bx + 0.5f, by + 0.5f, bz + 0.5f);
         Vector3f v = new Vector3f((rng.nextFloat() - 0.5f) * 1.5f, 2.5f, (rng.nextFloat() - 0.5f) * 1.5f);
         items.add(new DroppedItem(p, v, type));
+    }
+
+    // === Новые методы для Q (выбрасывания) ===
+    public void spawnWithVelocity(float x, float y, float z, BlockType type, float vx, float vy, float vz) {
+        items.add(new DroppedItem(new Vector3f(x, y, z), new Vector3f(vx, vy, vz), type));
+    }
+    public void spawnItemWithVelocity(float x, float y, float z, ItemType item, float vx, float vy, float vz) {
+        items.add(new DroppedItem(new Vector3f(x, y, z), new Vector3f(vx, vy, vz), item));
     }
 
     public void update(float dt, World world, Inventory inv, Vector3f playerFeet) {
@@ -86,7 +98,8 @@ public class ItemDropSystem {
                 it.onGround = true;
             }
             it.pos.set(next);
-            if (it.pos.distanceSquared(playerCenter) < 2.25f && it.age > 0.3f) {
+            // Подбираем только если дроп «полежал» 0.5 сек и игрок рядом
+            if (it.age > 0.5f && it.pos.distanceSquared(playerCenter) < 2.25f) {
                 Vector3f toPlayer = new Vector3f(playerCenter).sub(it.pos).normalize().mul(6f);
                 it.vel.set(toPlayer);
                 if (it.pos.distanceSquared(playerCenter) < 0.3f) {
@@ -100,8 +113,11 @@ public class ItemDropSystem {
     private void drawBlockCube(BlockType type, float size) {
         float s = size * 0.5f;
         float tu = TextureAtlas.TILE_U;
-        int tile = type.tileSide;
-        float u0 = tile * tu, u1 = u0 + tu;
+
+        // Верх/низ для травы — tileTop (серая маска + tint), бока — tileSide
+        int topTile = (type == BlockType.GRASS) ? type.tileTop : type.tileSide;
+        int sideTile = type.tileSide;
+        int bottomTile = (type == BlockType.GRASS) ? type.tileTop : type.tileSide;
 
         float[][][] faces = {
             {{s,-s, s},{s,-s,-s},{s, s,-s},{s, s, s}},     // +X
@@ -111,17 +127,23 @@ public class ItemDropSystem {
             {{-s,-s, s},{s,-s, s},{s, s, s},{-s, s, s}},   // +Z
             {{s,-s,-s},{-s,-s,-s},{-s, s,-s},{s, s,-s}}    // -Z
         };
+        int[] faceTiles = {sideTile, sideTile, topTile, bottomTile, sideTile, sideTile};
+        float[] faceTints = {0, 0, 1, 1, 0, 0}; // tint только для верха и низа травы
 
         float[][] uv = {{0,1},{1,1},{1,0},{0,0}};
-        float[] v = new float[6 * 4 * 5];
+        float[] v = new float[6 * 4 * 6]; // 3 pos + 2 uv + 1 tint
         int k = 0;
         for (int f = 0; f < 6; f++) {
+            int tile = faceTiles[f];
+            float u0 = tile * tu, u1 = u0 + tu;
+            float tint = faceTints[f];
             for (int i = 0; i < 4; i++) {
                 v[k++] = faces[f][i][0];
                 v[k++] = faces[f][i][1];
                 v[k++] = faces[f][i][2];
                 v[k++] = u0 + (u1 - u0) * uv[i][0];
                 v[k++] = uv[i][1];
+                v[k++] = tint;
             }
         }
 
@@ -131,10 +153,12 @@ public class ItemDropSystem {
         fb.put(v).flip();
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
         MemoryUtil.memFree(fb);
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5*4, 0L);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 6*4, 0L);
         GL20.glEnableVertexAttribArray(0);
-        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5*4, 3L*4L);
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 6*4, 3L*4L);
         GL20.glEnableVertexAttribArray(1);
+        GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 6*4, 5L*4L);
+        GL20.glEnableVertexAttribArray(2);
         for (int i = 0; i < 6; i++) GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, i*4, 4);
         GL30.glBindVertexArray(0);
     }
@@ -144,10 +168,10 @@ public class ItemDropSystem {
         float u0 = item.id * tu, u1 = u0 + tu;
         float s = size * 0.5f;
         float[] v = {
-            -s,-s,0, u0, 1f,
-             s,-s,0, u1, 1f,
-             s, s,0, u1, 0f,
-            -s, s,0, u0, 0f,
+            -s,-s,0, u0, 1f, 0f,
+             s,-s,0, u1, 1f, 0f,
+             s, s,0, u1, 0f, 0f,
+            -s, s,0, u0, 0f, 0f,
         };
         GL30.glBindVertexArray(vao);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
@@ -155,10 +179,12 @@ public class ItemDropSystem {
         fb.put(v).flip();
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
         MemoryUtil.memFree(fb);
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5*4, 0L);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 6*4, 0L);
         GL20.glEnableVertexAttribArray(0);
-        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5*4, 3L*4L);
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 6*4, 3L*4L);
         GL20.glEnableVertexAttribArray(1);
+        GL20.glVertexAttribPointer(2, 1, GL11.GL_FLOAT, false, 6*4, 5L*4L);
+        GL20.glEnableVertexAttribArray(2);
         GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
         GL30.glBindVertexArray(0);
     }
@@ -168,6 +194,7 @@ public class ItemDropSystem {
         ensureInit();
         shader.bind();
         GL20.glUniform1i(uTex, 0);
+        GL20.glUniform3f(uTint, 0.4f, 0.9f, 0.3f); // мягкий зелёный
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer pb = stack.mallocFloat(16);
             proj.get(pb); GL20.glUniformMatrix4fv(uProj, false, pb);
@@ -187,12 +214,10 @@ public class ItemDropSystem {
             if (it.item != null) {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, itemAtlasTex);
-                GL20.glUniform1i(uUseAtlas, 0);
                 drawItemQuad(it.item, 0.5f);
             } else {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
-                GL20.glUniform1i(uUseAtlas, 0); // всегда 0 (без tint)
                 drawBlockCube(it.type, 0.25f);
             }
         }

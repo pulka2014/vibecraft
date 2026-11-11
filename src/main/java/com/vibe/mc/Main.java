@@ -264,18 +264,21 @@ public class Main {
                 return;
             }
 
-            // Q — выбросить 1 предмет из выбранного слота
+            // Q — выбросить 1 предмет из выбранного слота (с импульсом вперёд)
             if (key == GLFW.GLFW_KEY_Q && !pause.isOpen() && !gs.invScreen.isOpen() && !gs.craftScreen.isOpen() && !gs.furnaceScreen.isOpen()) {
                 Inventory.Slot slot = gs.hotbar.selectedSlot();
                 if (slot != null && !slot.isEmpty()) {
-                    // Спавним дроп прямо перед игроком
-                    float dropX = gs.player.position.x + gs.player.getForward().x * 0.5f;
-                    float dropY = gs.player.position.y + 1.0f;
-                    float dropZ = gs.player.position.z + gs.player.getForward().z * 0.5f;
+                    org.joml.Vector3f fwd = gs.player.getForward();
+                    float dropX = gs.player.position.x + fwd.x * 0.8f;
+                    float dropY = gs.player.position.y + 1.2f;
+                    float dropZ = gs.player.position.z + fwd.z * 0.8f;
+                    float vx = fwd.x * 4f;
+                    float vy = 3f;
+                    float vz = fwd.z * 4f;
                     if (slot.isBlock()) {
-                        gs.world.drops.spawn((int)dropX, (int)dropY, (int)dropZ, slot.block);
+                        gs.world.drops.spawnWithVelocity(dropX, dropY, dropZ, slot.block, vx, vy, vz);
                     } else if (slot.isItem()) {
-                        gs.world.drops.spawnItem((int)dropX, (int)dropY, (int)dropZ, slot.item);
+                        gs.world.drops.spawnItemWithVelocity(dropX, dropY, dropZ, slot.item, vx, vy, vz);
                     }
                     gs.hotbar.consumeSelected();
                 }
