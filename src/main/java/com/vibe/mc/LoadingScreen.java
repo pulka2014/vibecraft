@@ -45,6 +45,7 @@ public class LoadingScreen {
         this.shader = new Shader(VERT, FRAG);
         this.vao = GL30.glGenVertexArrays();
         this.vbo = GL15.glGenBuffers();
+        initMap();
     }
 
     public void initMap() {
@@ -107,6 +108,7 @@ public class LoadingScreen {
         if (!verts.isEmpty()) {
             float[] v = new float[verts.size()];
             for (int i = 0; i < verts.size(); i++) v[i] = verts.get(i);
+            if (v.length == 0) return; // защита
 
             GL30.glBindVertexArray(vao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
