@@ -469,22 +469,39 @@ public class Main {
                                         Chunk c = w.chunks.get(new ChunkPos(cx, cz));
                                         int color = 0x000000;
                                         if (c != null) {
-                                            // Доминирующий блок в чанке: берём верхний по центру
-                                            int topY = 0;
-                                            BlockType topBlock = BlockType.AIR;
-                                            for (int y = Chunk.SY - 1; y >= 0; y--) {
-                                                BlockType b = c.get(Chunk.SX/2, y, Chunk.SZ/2);
-                                                if (b != BlockType.AIR) { topBlock = b; topY = y; break; }
+                                            // Считаем, сколько блоков каждого типа на поверхности чанка
+                                            int grass = 0, dirt = 0, stone = 0, ore = 0, wood = 0, sand = 0, leaves = 0, other = 0;
+                                            for (int x = 0; x < Chunk.SX; x++) {
+                                                for (int z = 0; z < Chunk.SZ; z++) {
+                                                    // Ищем самый верхний НЕ воздушный блок в колонке
+                                                    for (int y = Chunk.SY - 1; y >= 0; y--) {
+                                                        BlockType b = c.get(x, y, z);
+                                                        if (b == BlockType.AIR) continue;
+                                                        switch (b) {
+                                                            case GRASS -> grass++;
+                                                            case DIRT -> dirt++;
+                                                            case STONE, COBBLESTONE -> stone++;
+                                                            case COAL_ORE, IRON_ORE, DIAMOND_ORE -> ore++;
+                                                            case WOOD, PLANKS -> wood++;
+                                                            case LEAVES -> leaves++;
+                                                            case SAND -> sand++;
+                                                            default -> other++;
+                                                        }
+                                                        break; // нашли поверхность, идем к следующей колонке
+                                                    }
+                                                }
                                             }
-                                            color = switch (topBlock) {
-                                                case GRASS, LEAVES -> 0x4CAF50;
-                                                case DIRT, WOOD, PLANKS -> 0x8B5A2B;
-                                                case STONE, COBBLESTONE -> 0x888888;
-                                                case COAL_ORE, IRON_ORE, DIAMOND_ORE, FURNACE -> 0x555555;
-                                                case SAND -> 0xDCD6A0;
-                                                case CRAFTING_TABLE -> 0xA0522D;
-                                                default -> 0x000000;
-                                            };
+                                            
+                                            // Выбираем самый частый блок
+                                            int max = Math.max(grass, Math.max(dirt, Math.max(stone, Math.max(ore, Math.max(wood, Math.max(leaves, sand))))));
+                                            if (max == grass) color = 0x4CAF50;       // зелёный
+                                            else if (max == wood) color = 0x8B5A2B;   // коричневый
+                                            else if (max == leaves) color = 0x2E7D32; // тёмно-зелёный
+                                            else if (max == dirt) color = 0x795548;   // грязно-коричневый
+                                            else if (max == stone) color = 0x888888;  // серый
+                                            else if (max == ore) color = 0x444444;    // тёмно-серый
+                                            else if (max == sand) color = 0xDCD6A0;   // песочный
+                                            else color = 0x555555;
                                         }
                                         gs.loadingScreen.setChunkColor(cx, cz, color);
                                         loadedChunks++;
