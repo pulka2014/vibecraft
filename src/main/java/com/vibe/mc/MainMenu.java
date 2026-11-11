@@ -95,8 +95,11 @@ public class MainMenu {
         float y0 = 0.30f - row*(h+gap);
         return new float[]{x0, y0, x0+w, y0+h};
     }
-    private float[] deleteWorldRect() {
-        return new float[]{ -0.16f, -0.40f, 0.16f, -0.32f };
+    private float[] crossRect(int slot) {
+        float[] r = slotRect(slot);
+        float size = 0.03f;
+        float pad = 0.005f;
+        return new float[]{ r[2] - size - pad, r[3] - size - pad, r[2] - pad, r[3] - pad };
     }
     private float[] newWorldRect() {
         return new float[]{ -0.16f, -0.30f, 0.16f, -0.22f };
@@ -126,6 +129,15 @@ public class MainMenu {
                     if (hover(no[0], no[1], no[2], no[3])) { confirmDeleteSlot = 0; return; }
                     return;
                 }
+                // Крестики (удаление) — проверяем ПЕРВЫМИ, чтобы клик по ним не запускал игру
+                for (int s = 1; s <= Worlds.MAX; s++) {
+                    if (!Worlds.exists(s)) continue;
+                    float[] c = crossRect(s);
+                    if (hover(c[0], c[1], c[2], c[3])) {
+                        confirmDeleteSlot = s;
+                        return;
+                    }
+                }
                 for (int s = 1; s <= Worlds.MAX; s++) {
                     float[] r = slotRect(s);
                     if (hover(r[0], r[1], r[2], r[3])) { selectedSlot = s; pendingAction = "play:" + s; return; }
@@ -136,13 +148,6 @@ public class MainMenu {
                     for (int s = 1; s <= Worlds.MAX; s++) if (!Worlds.exists(s)) { slot = s; break; }
                     if (slot < 0) return;
                     pendingAction = "play:" + slot;
-                    return;
-                }
-                float[] del = deleteWorldRect();
-                if (hover(del[0], del[1], del[2], del[3])) {
-                    if (selectedSlot >= 1 && Worlds.exists(selectedSlot)) {
-                        confirmDeleteSlot = selectedSlot;
-                    }
                     return;
                 }
                 float[] back = backRect();
@@ -282,11 +287,24 @@ public class MainMenu {
         for (int s = 1; s <= Worlds.MAX; s++) {
             float[] r = slotRect(s);
             drawButtonRect(r[0], r[1], r[2], r[3], hover(r[0], r[1], r[2], r[3]));
+            if (Worlds.exists(s)) {
+                float[] c = crossRect(s);
+                boolean ch = hover(c[0], c[1], c[2], c[3]);
+                // Красный фон крестика
+                drawQuad(c[0], c[1], c[2], c[3], ch?0.85f:0.65f, ch?0.15f:0.20f, 0.15f, 1f);
+                // Сам крестик (белые полоски)
+                float t = 0.004f;
+                float cx0 = c[0] + t, cx1 = c[2] - t;
+                float cy0 = c[1] + t, cy1 = c[3] - t;
+                // Диагональ 1 (\) — строим двумя тонкими прямоугольниками
+                drawQuad(cx0, cy0, cx1, cy0 + 0.006f, 1f,1f,1f,1f);
+                drawQuad(cx0, cy0, cx0 + 0.006f, cy1, 1f,1f,1f,1f);
+                drawQuad(cx1 - 0.006f, cy0, cx1, cy1, 1f,1f,1f,1f);
+                drawQuad(cx0, cy1 - 0.006f, cx1, cy1, 1f,1f,1f,1f);
+            }
         }
         float[] nw = newWorldRect();
         drawButtonRect(nw[0], nw[1], nw[2], nw[3], hover(nw[0], nw[1], nw[2], nw[3]));
-        float[] del = deleteWorldRect();
-        drawButtonRect(del[0], del[1], del[2], del[3], hover(del[0], del[1], del[2], del[3]));
         float[] back = backRect();
         drawButtonRect(back[0], back[1], back[2], back[3], hover(back[0], back[1], back[2], back[3]));
 
@@ -313,12 +331,10 @@ public class MainMenu {
         float[] nw = newWorldRect();
         float nwH = 0.032f;
         font.drawString("New World", (nw[0]+nw[2])/2f - font.width("New World", nwH)/2f, (nw[1]+nw[3])/2f + nwH/2f, nwH);
-        float[] del = deleteWorldRect();
-        font.drawString("Delete", (del[0]+del[2])/2f - font.width("Delete", nwH)/2f, (del[1]+del[3])/2f + nwH/2f, nwH);
         float[] back = backRect();
         float ch = 0.035f;
         font.drawString("Back", (back[0]+back[2])/2f - font.width("Back", ch)/2f, (back[1]+back[3])/2f + ch/2f, ch);
-        font.drawString("LMB = play, RMB = delete", -0.95f, -0.96f, 0.022f);
+        font.drawString("LMB = play, X = delete", -0.95f, -0.96f, 0.022f);
         if (confirmDeleteSlot > 0) {
             String q = "Delete slot " + confirmDeleteSlot + "?";
             float qh = 0.035f;
