@@ -18,9 +18,9 @@ import java.util.Random;
 public class ParticleSystem {
     private final List<Particle> particles = new ArrayList<>();
     private final Random rng = new Random();
-    private final int vao, vbo, ebo;
-    private final Shader shader;
-    private final int uProj, uView, uModel, uTex, uUVOffset, uTintColor;
+    private int vao = 0, vbo = 0, ebo = 0;
+    private Shader shader = null;
+    private int uProj = -1, uView = -1, uModel = -1, uTex = -1, uUVOffset = -1, uTintColor = -1;
     private static final int MAX_PARTICLES = 2000;
 
     private static final String VERT = """
@@ -45,7 +45,6 @@ public class ParticleSystem {
         }
         """;
 
-    // куб 1x1x1, UV: u = 0..TILE_U, v = 0..1
     private static final float[] CUBE = {
         -0.5f,-0.5f, 0.5f, 0f,1f,   0.5f,-0.5f, 0.5f, TextureAtlas.TILE_U,1f,   0.5f,0.5f, 0.5f, TextureAtlas.TILE_U,0f,  -0.5f,0.5f, 0.5f, 0f,0f,
          0.5f,-0.5f,-0.5f, 0f,1f,  -0.5f,-0.5f,-0.5f, TextureAtlas.TILE_U,1f,  -0.5f,0.5f,-0.5f, TextureAtlas.TILE_U,0f,   0.5f,0.5f,-0.5f, 0f,0f,
@@ -59,7 +58,9 @@ public class ParticleSystem {
         12,13,14, 14,15,12, 16,17,18, 18,19,16, 20,21,22, 22,23,20
     };
 
-    public ParticleSystem() {
+    /** Ленивая инициализация — только в главном потоке (из render). */
+    private void ensureInit() {
+        if (shader != null) return;
         shader = new Shader(VERT, FRAG);
         uProj = shader.uniform("uProj");
         uView = shader.uniform("uView");
@@ -67,7 +68,6 @@ public class ParticleSystem {
         uTex = shader.uniform("uTex");
         uUVOffset = shader.uniform("uUVOffset");
         uTintColor = shader.uniform("uTintColor");
-
         vao = GL30.glGenVertexArrays();
         vbo = GL15.glGenBuffers();
         ebo = GL15.glGenBuffers();
@@ -96,11 +96,7 @@ public class ParticleSystem {
             float px = bx + 0.2f + rng.nextFloat() * 0.6f;
             float py = by + 0.2f + rng.nextFloat() * 0.6f;
             float pz = bz + 0.2f + rng.nextFloat() * 0.6f;
-            Vector3f v = new Vector3f(
-                (rng.nextFloat() - 0.5f) * 3f,
-                1.5f + rng.nextFloat() * 3f,
-                (rng.nextFloat() - 0.5f) * 3f
-            );
+            Vector3f v = new Vector3f((rng.nextFloat() - 0.5f) * 3f, 1.5f + rng.nextFloat() * 3f, (rng.nextFloat() - 0.5f) * 3f);
             particles.add(new Particle(new Vector3f(px, py, pz), v, type, 0.8f + rng.nextFloat() * 0.6f, 0.12f + rng.nextFloat() * 0.08f));
         }
     }
@@ -118,6 +114,7 @@ public class ParticleSystem {
 
     public void render(Matrix4f proj, Matrix4f view, int atlasTex) {
         if (particles.isEmpty()) return;
+        ensureInit();
         shader.bind();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
@@ -136,7 +133,9 @@ public class ParticleSystem {
                 GL20.glUniformMatrix4fv(uModel, false, pb);
             }
             GL20.glUniform1f(uUVOffset, p.type.tileSide * TextureAtlas.TILE_U);
-            GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
+            if (p.type == BlockType.GRASS) GL20.glUniform3f(uTintColor, 0.35f, 0.85f, 0.30f);
+            else if (p.type == BlockType.LEAVES) GL20.glUniform3f(uTintColor, 0.25f, 0.65f, 0.20f);
+            else GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
             GL11.glDrawElements(GL11.GL_TRIANGLES, INDICES.length, GL11.GL_UNSIGNED_INT, 0);
         }
         GL30.glBindVertexArray(0);

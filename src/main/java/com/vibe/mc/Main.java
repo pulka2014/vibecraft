@@ -354,6 +354,9 @@ public class Main {
         double lastTime = GLFW.glfwGetTime();
         int frames = 0; double fpsTimer = 0; int fps = 0; double saveTimer = 0;
 
+        // ---- CRASH HANDLER ----
+        String[] crashTrace = { null };
+        try {
         while (!GLFW.glfwWindowShouldClose(window)) {
             double now = GLFW.glfwGetTime();
             float dt = (float)(now - lastTime);
@@ -567,6 +570,45 @@ public class Main {
         }
 
         try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception ignored) {}
+        } catch (Throwable ex) {
+            java.io.StringWriter sw = new java.io.StringWriter();
+            ex.printStackTrace(new java.io.PrintWriter(sw));
+            crashTrace[0] = sw.toString();
+            System.err.println("[FATAL] " + crashTrace[0]);
+            Logger.error("[FATAL] " + crashTrace[0]);
+        }
+
+        // Если был краш — рисуем экран ошибки, пока пользователь не нажмёт Enter
+        if (crashTrace[0] != null) {
+            System.err.println("[Main] Rendering crash screen...");
+            while (!GLFW.glfwWindowShouldClose(window)) {
+                GL11.glClearColor(0.1f, 0.0f, 0.0f, 1f);
+                GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+                int ww[] = new int[1], hh[] = new int[1];
+                GLFW.glfwGetWindowSize(window, ww, hh);
+                // Рисуем текст через DebugOverlay.font? Есть только font в main — используем его
+                // (font доступен как локальная переменная, но мы в catch — надо вынести font выше try)
+                try {
+                    // Рисуем только первые 25 строк stacktrace
+                    String[] lines = crashTrace[0].split("\n");
+                    float ch = 0.025f;
+                    float y = 0.9f;
+                    for (int i = 0; i < Math.min(lines.length, 25); i++) {
+                        font.drawString(lines[i].length() > 120 ? lines[i].substring(0, 120) : lines[i], -0.95f, y, ch);
+                        y -= ch * 1.3f;
+                    }
+                    font.drawString("Press ENTER to copy stacktrace and close", -0.95f, -0.95f, 0.03f);
+                } catch (Throwable ignored) {}
+                GLFW.glfwSwapBuffers(window);
+                GLFW.glfwPollEvents();
+                if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ENTER) == GLFW.GLFW_PRESS) {
+                    GLFW.glfwSetClipboardString(window, crashTrace[0]);
+                    System.err.println("[Main] stacktrace copied to clipboard");
+                    break;
+                }
+            }
+        }
+
         sound.destroy();
         Logger.close();
         GLFW.glfwDestroyWindow(window);

@@ -20,9 +20,9 @@ public class ItemDropSystem {
     public void setItemAtlas(int tex) { this.itemAtlasTex = tex; }
     private final List<DroppedItem> items = new ArrayList<>();
     private final Random rng = new Random();
-    private int vao, vbo;
-    private final Shader shader;
-    private final int uProj, uView, uModel, uTex, uUseAtlas;
+    private int vao = 0, vbo = 0;
+    private Shader shader;
+    private int uProj, uView, uModel, uTex, uUseAtlas;
 
     private static final String VERT = """
         #version 330 core
@@ -45,13 +45,15 @@ public class ItemDropSystem {
         }
         """;
 
+    private void ensureInit() {
+        if (shader != null) return;
+        shader = new Shader(VERT, FRAG);
+        vao = GL30.glGenVertexArrays();
+        vbo = GL15.glGenBuffers();
+    }
+
     public ItemDropSystem() {
         shader = new Shader(VERT, FRAG);
-        uProj = shader.uniform("uProj");
-        uView = shader.uniform("uView");
-        uModel = shader.uniform("uModel");
-        uTex = shader.uniform("uTex");
-        uUseAtlas = shader.uniform("uUseAtlas");
         vao = GL30.glGenVertexArrays();
         vbo = GL15.glGenBuffers();
     }
@@ -166,6 +168,7 @@ public class ItemDropSystem {
 
     public void render(Matrix4f proj, Matrix4f view, int atlasTex) {
         if (items.isEmpty()) return;
+        ensureInit();
         shader.bind();
         GL20.glUniform1i(uTex, 0);
         try (MemoryStack stack = MemoryStack.stackPush()) {
