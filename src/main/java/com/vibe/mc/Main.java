@@ -310,14 +310,16 @@ public class Main {
             if (hit == null) return;
             if (button == GLFW.GLFW_MOUSE_BUTTON_RIGHT) {
                 BlockType target = gs.world.getBlock(hit[0], hit[1], hit[2]);
-                if (target == BlockType.CRAFTING_TABLE) {
+                // Если игрок присел — не открываем GUI, ставим блок
+                boolean guiAllowed = !gs.player.crouching;
+                if (guiAllowed && target == BlockType.CRAFTING_TABLE) {
                     if (!gs.craftScreen.isOpen()) {
                         gs.craftScreen.open();
                         GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
                     }
                     return;
                 }
-                if (target == BlockType.FURNACE) {
+                if (guiAllowed && target == BlockType.FURNACE) {
                     if (!gs.furnaceScreen.isOpen()) {
                         gs.furnaceScreen.open();
                         GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
