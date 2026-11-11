@@ -435,16 +435,17 @@ public class Main {
                     }
                     w.drops.setItemAtlas(itemTex);
                     gs.world = w;
-                    gs.player = new Player(); // позиция будет установлена applySaveTo
-
+                    gs.player = new Player(); // создаём игрока (временная позиция)
                     gs.time = new TimeOfDay();
                     gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
                     gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
                     gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
                     gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
-                    lastPosInit = false;
-                    // Перестраиваем ВСЕ меши в главном потоке (GL-контекст есть)
-                    gs.world.rebuildAll();
+                    
+                    // ПРИМЕНЯЕМ СЕЙВ (позиция, инвентарь) — это должно быть ПОСЛЕДНИМ
+                    SaveManager.SaveData currentSave = SaveManager.load();
+                    applySaveTo(gs, currentSave);
+                    
                     gs.loadingScreenActive = false;
                     GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
                     System.out.println("[Main] play slot " + gs.activeSlot);
