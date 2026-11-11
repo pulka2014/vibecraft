@@ -105,11 +105,10 @@ public class LoadingScreen {
         if (pos > 0) {
             GL30.glBindVertexArray(vao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-            try (MemoryStack st = MemoryStack.stackPush()) {
-                FloatBuffer fb = st.mallocFloat(pos);
-                fb.put(vertexBuffer, 0, pos).flip();
-                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
-            }
+            FloatBuffer fb = org.lwjgl.system.MemoryUtil.memAllocFloat(pos);
+            fb.put(vertexBuffer, 0, pos).flip();
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
+            org.lwjgl.system.MemoryUtil.memFree(fb);
             GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 6*4, 0L);
             GL20.glEnableVertexAttribArray(0);
             GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
