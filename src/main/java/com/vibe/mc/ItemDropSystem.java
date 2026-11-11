@@ -20,7 +20,7 @@ public class ItemDropSystem {
     public void setItemAtlas(int tex) { this.itemAtlasTex = tex; }
     private final List<DroppedItem> items = new ArrayList<>();
     private final Random rng = new Random();
-    private int vao = 0, vbo = 0;
+    private int vao, vbo;
     private Shader shader = null;
     private int uProj = -1, uView = -1, uModel = -1, uTex = -1, uUseAtlas = -1;
 
@@ -40,7 +40,7 @@ public class ItemDropSystem {
         out vec4 FragColor;
         void main() {
             vec4 c = texture(uTex, vUV);
-            if (uUseAtlas == 1) c.rgb *= vec3(0.35, 0.85, 0.30);
+            if (uUseAtlas == 1) c.rgb *= vec3(0.35, 0.85, 0.30); // tint (не используется)
             FragColor = c;
         }
         """;
@@ -56,8 +56,6 @@ public class ItemDropSystem {
         vao = GL30.glGenVertexArrays();
         vbo = GL15.glGenBuffers();
     }
-
-    public ItemDropSystem() { /* пустой конструктор — GL только в ensureInit */ }
 
     public void spawnItem(int bx, int by, int bz, ItemType item) {
         Vector3f p = new Vector3f(bx + 0.5f, by + 0.5f, bz + 0.5f);
@@ -102,54 +100,42 @@ public class ItemDropSystem {
     private void drawBlockCube(BlockType type, float size) {
         float s = size * 0.5f;
         float tu = TextureAtlas.TILE_U;
+        int tile = type.tileSide;
+        float u0 = tile * tu, u1 = u0 + tu;
 
-        // Индексы тайлов: 0:+X, 1:-X, 2:+Y(top), 3:-Y(bottom), 4:+Z, 5:-Z
-        int[] tiles = {
-            type.tileSide, type.tileSide,
-            type.tileTop,  type.tileBottom,
-            type.tileFront, type.tileSide
-        };
-
-        // Для каждой грани: 4 вершины (x,y,z). UV зададим вручную ниже.
         float[][][] faces = {
             {{s,-s, s},{s,-s,-s},{s, s,-s},{s, s, s}},     // +X
             {{-s,-s,-s},{-s,-s, s},{-s, s, s},{-s, s,-s}}, // -X
-            {{-s, s, s},{s, s, s},{s, s,-s},{-s, s,-s}},   // +Y (top)
-            {{-s,-s,-s},{s,-s,-s},{s,-s, s},{-s,-s, s}},   // -Y (bottom)
+            {{-s, s, s},{s, s, s},{s, s,-s},{-s, s,-s}},   // +Y
+            {{-s,-s,-s},{s,-s,-s},{s,-s, s},{-s,-s, s}},   // -Y
             {{-s,-s, s},{s,-s, s},{s, s, s},{-s, s, s}},   // +Z
             {{s,-s,-s},{-s,-s,-s},{-s, s,-s},{s, s,-s}}    // -Z
         };
 
-        // UV для 4 вершин: (0,1), (1,1), (1,0), (0,0)
         float[][] uv = {{0,1},{1,1},{1,0},{0,0}};
-
         float[] v = new float[6 * 4 * 5];
         int k = 0;
         for (int f = 0; f < 6; f++) {
-            int tile = tiles[f];
-            float u0 = tile * tu, u1 = u0 + tu;
             for (int i = 0; i < 4; i++) {
                 v[k++] = faces[f][i][0];
                 v[k++] = faces[f][i][1];
                 v[k++] = faces[f][i][2];
                 v[k++] = u0 + (u1 - u0) * uv[i][0];
-                v[k++] = uv[i][1]; // 1 = низ, 0 = верх
+                v[k++] = uv[i][1];
             }
         }
 
         GL30.glBindVertexArray(vao);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        FloatBuffer fb = org.lwjgl.system.MemoryUtil.memAllocFloat(v.length);
+        FloatBuffer fb = MemoryUtil.memAllocFloat(v.length);
         fb.put(v).flip();
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
-        org.lwjgl.system.MemoryUtil.memFree(fb);
+        MemoryUtil.memFree(fb);
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5*4, 0L);
         GL20.glEnableVertexAttribArray(0);
         GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5*4, 3L*4L);
         GL20.glEnableVertexAttribArray(1);
-        for (int i = 0; i < 6; i++) {
-            GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, i*4, 4);
-        }
+        for (int i = 0; i < 6; i++) GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, i*4, 4);
         GL30.glBindVertexArray(0);
     }
 
@@ -206,8 +192,7 @@ public class ItemDropSystem {
             } else {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
-                boolean tint = false; // текстуры уже цветные (grass_block_side), tint не нужен
-                GL20.glUniform1i(uUseAtlas, tint ? 1 : 0);
+                GL20.glUniform1i(uUseAtlas, 0); // всегда 0 (без tint)
                 drawBlockCube(it.type, 0.25f);
             }
         }

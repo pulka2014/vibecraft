@@ -98,6 +98,10 @@ public class Main {
         // Проверяем, нужно ли спавнить в центре (если save == null или px, pz почти нули)
         boolean spawnCenter = (save == null) || (Math.abs(save.px) < 0.1f && Math.abs(save.pz) < 0.1f);
         System.out.println("[Main] applySaveTo: save=" + (save != null) + " px=" + (save != null ? save.px : "null") + " pz=" + (save != null ? save.pz : "null") + " spawnCenter=" + spawnCenter);
+        if (spawnCenter && save != null && (Math.abs(save.px) >= 0.1f || Math.abs(save.pz) >= 0.1f)) {
+            // Не ставим в центр, если в save есть координаты
+            spawnCenter = false;
+        }
         if (spawnCenter) {
             float cx = World.SIZE * Chunk.SX / 2f;
             float cz = World.SIZE * Chunk.SZ / 2f;
