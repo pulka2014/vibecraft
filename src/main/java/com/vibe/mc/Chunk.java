@@ -271,13 +271,12 @@ public class Chunk {
                         int tile;
                         if (b == BlockType.FURNACE) {
                             int rot = getRotation(x, y, z);
-                            // Игрок ставит печь так, чтобы front смотрел на него.
-                            // В текстуре furnace_front.png «лицо» на -Z, поэтому:
+                            // furnace_front.png «смотрит» на +Z (Forge 1.20.1)
                             int frontFace = switch (rot) {
-                                case 0 -> 3;   // -Z (лицо на север)
-                                case 1 -> 5;   // -X (лицо на запад)
-                                case 2 -> 2;   // +Z (лицо на юг)
-                                default -> 4;  // +X (лицо на восток)
+                                case 0 -> 2;   // +Z
+                                case 1 -> 4;   // +X
+                                case 2 -> 3;   // -Z
+                                default -> 5;  // -X
                             };
                             if (f == frontFace) tile = b.tileFront;
                             else if (f == 0) tile = b.tileTop;
