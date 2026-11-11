@@ -421,44 +421,38 @@ public class Main {
                         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
                         gs.loadingScreenActive = true;
 
+                        gs.loadingScreen.initMap();
                         Thread t = new Thread(() -> {
                             try {
                                 LoadedWorld lw = loadOrCreateWorld(slotFinal);
                                 World w = lw.world;
-
-                                // Строим карту мира (80x80) сверху
-                                int N = World.SIZE * Chunk.SX;
-                                int[][] colors = new int[N][N];
                                 int loadedChunks = 0;
-                                for (int cx = 0; cx < World.SIZE; cx++) {
-                                    for (int cz = 0; cz < World.SIZE; cz++) {
+                                for (int cz = 0; cz < World.SIZE; cz++) {
+                                    for (int cx = 0; cx < World.SIZE; cx++) {
                                         Chunk c = w.chunks.get(new ChunkPos(cx, cz));
+                                        int color = 0x000000;
                                         if (c != null) {
-                                            for (int x = 0; x < Chunk.SX; x++) {
-                                                for (int z = 0; z < Chunk.SZ; z++) {
-                                                    int top = 0;
-                                                    for (int y = Chunk.SY - 1; y >= 0; y--) {
-                                                        if (c.get(x, y, z) != BlockType.AIR) { top = y; break; }
-                                                    }
-                                                    BlockType b = (top == 0) ? BlockType.AIR : c.get(x, top, z);
-                                                    int color;
-                                                    switch (b) {
-                                                        case GRASS, LEAVES -> color = 0x4CAF50; // зелёный
-                                                        case DIRT, WOOD, PLANKS -> color = 0x8B5A2B; // коричневый
-                                                        case STONE, COBBLESTONE -> color = 0x888888; // серый
-                                                        case COAL_ORE, IRON_ORE, DIAMOND_ORE, FURNACE -> color = 0x555555;
-                                                        case SAND -> color = 0xDCD6A0;
-                                                        case CRAFTING_TABLE -> color = 0xA0522D;
-                                                        default -> color = 0x000000;
-                                                    }
-                                                    colors[cz * Chunk.SZ + z][cx * Chunk.SX + x] = color;
-                                                }
+                                            // Доминирующий блок в чанке: берём верхний по центру
+                                            int topY = 0;
+                                            BlockType topBlock = BlockType.AIR;
+                                            for (int y = Chunk.SY - 1; y >= 0; y--) {
+                                                BlockType b = c.get(Chunk.SX/2, y, Chunk.SZ/2);
+                                                if (b != BlockType.AIR) { topBlock = b; topY = y; break; }
                                             }
+                                            color = switch (topBlock) {
+                                                case GRASS, LEAVES -> 0x4CAF50;
+                                                case DIRT, WOOD, PLANKS -> 0x8B5A2B;
+                                                case STONE, COBBLESTONE -> 0x888888;
+                                                case COAL_ORE, IRON_ORE, DIAMOND_ORE, FURNACE -> 0x555555;
+                                                case SAND -> 0xDCD6A0;
+                                                case CRAFTING_TABLE -> 0xA0522D;
+                                                default -> 0x000000;
+                                            };
                                         }
+                                        gs.loadingScreen.setChunkColor(cx, cz, color);
                                         loadedChunks++;
                                         gs.loadingScreen.loaded.set(loadedChunks);
-                                        gs.loadingScreen.setMap(colors);
-                                        Thread.sleep(5); // чтобы UI успевал отрисоваться
+                                        Thread.sleep(8); // визуальная задержка
                                     }
                                 }
                                 w.drops.setItemAtlas(itemTex);
