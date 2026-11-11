@@ -70,38 +70,40 @@ public class FurnaceScreen {
     public void setMouse(float nx, float ny) { mouseX = nx; mouseY = ny; }
 
     private float[] slotRect(int i) {
-        if (i == 0) return new float[]{-0.25f, 0.20f, -0.17f, 0.28f};
-        if (i == 1) return new float[]{-0.25f, 0.05f, -0.17f, 0.13f};
-        return new float[]{-0.05f, 0.12f, 0.03f, 0.20f};
+        // 3 слота: top (вход), bottom (топливо), right (результат)
+        if (i == 0) return new float[]{-0.30f, 0.30f, -0.22f, 0.38f};
+        if (i == 1) return new float[]{-0.30f, 0.15f, -0.22f, 0.23f};
+        return new float[]{-0.10f, 0.22f, -0.02f, 0.30f};
     }
 
     /** Плавка: раз в ~10 секунд. Возвращает true, если что-то переплавлено. */
     public boolean updateFurnace() {
-        // Топливо
+        Inventory.Slot fuel = grid[1];
+        Inventory.Slot mat = grid[0];
+        // Если нет сырья — топливо не тратим
+        if (mat.isEmpty() || !smeltable(mat, grid[2])) {
+            return false;
+        }
         if (burnTime <= 0) {
-            Inventory.Slot fuel = grid[1];
             if (!fuel.isEmpty() && isFuel(fuel)) {
                 maxBurnTime = fuelForSlot(fuel);
                 burnTime = maxBurnTime;
                 fuel.count--; if (fuel.count <= 0) fuel.clear();
+            } else {
+                return false; // нет топлива — не плавим
             }
         }
-        // Рецепт
-        Inventory.Slot mat = grid[0];
         if (burnTime > 0) burnTime -= 0.05;
         Inventory.Slot res = grid[2];
-        if (burnTime > 0 && !mat.isEmpty() && smeltable(mat, res)) {
-            smeltProgress += 0.02f;
-            if (smeltProgress >= 1f) {
-                smeltProgress = 0;
-                // положить результат
-                if (res.isEmpty()) { res.item = ItemType.IRON_INGOT; res.count = 1; }
-                else if (res.isItem() && res.item == ItemType.IRON_INGOT && res.count < Inventory.MAX_STACK) res.count++;
-                else return false;
-                mat.count--; if (mat.count <= 0) mat.clear();
-                return true;
-            }
-        } else smeltProgress = 0;
+        smeltProgress += 0.02f;
+        if (smeltProgress >= 1f) {
+            smeltProgress = 0;
+            if (res.isEmpty()) { res.item = ItemType.IRON_INGOT; res.count = 1; }
+            else if (res.isItem() && res.item == ItemType.IRON_INGOT && res.count < Inventory.MAX_STACK) res.count++;
+            else return false;
+            mat.count--; if (mat.count <= 0) mat.clear();
+            return true;
+        }
         return false;
     }
 
@@ -161,24 +163,21 @@ public class FurnaceScreen {
     }
 
     private float[] invSlotRect(int i) {
-        // Точно как в InventoryScreen.slotRect(i):
-        //   хотбар (0..8) -> row 3, y0 = -0.9f
-        //   main (9..35) -> row 2..0, y0 = -0.15f - r*(SLOT+GAP)
         float totalW = 9 * SLOT + 8 * GAP;
         float startX = -totalW / 2f;
-        int col;
-        float y0;
+        int col, row;
+        if (i < Inventory.HOTBAR) { col = i; row = 3; }
+        else { int m = i - Inventory.HOTBAR; col = m % 9; row = 2 - (m / 9); }
+        float x0 = startX + col * (SLOT + GAP);
+        float y0 = -0.1f + row * (SLOT + GAP) + (row == 3 ? -0.05f : 0);
         if (i < Inventory.HOTBAR) {
-            col = i;
             y0 = -0.9f;
         } else {
             int m = i - Inventory.HOTBAR;
-            int c = m % 9;
-            int r = m / 9;
-            col = c;
+            int c = m % 9, r = m / 9;
+            x0 = startX + c * (SLOT + GAP);
             y0 = -0.15f - r * (SLOT + GAP);
         }
-        float x0 = startX + col * (SLOT + GAP);
         return new float[]{x0, y0, x0 + SLOT, y0 + SLOT};
     }
 
