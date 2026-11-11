@@ -208,8 +208,17 @@ public class World {
         if (pMaxX > x && pMinX < x + 1 && pMaxY > y && pMinY < y + 1 && pMaxZ > z && pMinZ < z + 1) return;
         setBlock(x, y, z, type);
         if (type == BlockType.FURNACE) {
-            // raycast возвращает нормаль "от блока к игроку" => front смотрит по нормали
             int fx = nx, fz = nz;
+            // Если нормаль вертикальная (поставили на землю/потолок) — берём направление от блока к игроку
+            if (fx == 0 && fz == 0) {
+                float dxp = playerFeet.x - (x + 0.5f);
+                float dzp = playerFeet.z - (z + 0.5f);
+                if (Math.abs(dxp) > Math.abs(dzp)) {
+                    fx = dxp > 0 ? 1 : -1;
+                } else {
+                    fz = dzp > 0 ? 1 : -1;
+                }
+            }
             int rot;
             if (fx > 0) rot = 1;       // front на +X
             else if (fx < 0) rot = 3;  // front на -X
