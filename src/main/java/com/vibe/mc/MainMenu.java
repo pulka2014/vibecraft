@@ -265,7 +265,7 @@ public class MainMenu {
             font.drawString(lb, cx - font.width(lb, ch)/2f, y + ch/2f, ch);
             y -= (h + gap);
         }
-        font.drawString("VibeCraft 0.2  |  " + (int)SettingsHolder.get().fov + " FOV", -0.95f, -0.96f, 0.025f);
+        font.drawString("VibeCraft 1.0.0  |  " + (int)SettingsHolder.get().fov + " FOV", -0.95f, -0.96f, 0.025f);
     }
 
     private void renderSingleplayer() {
