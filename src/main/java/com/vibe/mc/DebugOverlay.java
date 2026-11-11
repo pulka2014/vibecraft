@@ -4,6 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DebugOverlay {
+    private static String cachedVersion = null;
+    public static String version() {
+        if (cachedVersion != null) return cachedVersion;
+        try (java.io.InputStream in = DebugOverlay.class.getClassLoader().getResourceAsStream("version.txt")) {
+            if (in != null) {
+                cachedVersion = new String(in.readAllBytes()).trim();
+                return cachedVersion;
+            }
+        } catch (Exception ignored) {}
+        cachedVersion = "unknown";
+        return cachedVersion;
+    }
+
     private final FontRenderer font;
     private final List<String> lines = new ArrayList<>();
 
@@ -13,7 +26,7 @@ public class DebugOverlay {
 
     public void update(World world, Player player, TimeOfDay time, int fps, int[] hit, float dt) {
         lines.clear();
-        lines.add("VibeCraft  FPS: " + fps + "  " + time.phase() + "  sun=" + String.format("%.2f", time.sunBrightness()));
+        lines.add("VibeCraft " + version() + "  FPS: " + fps + "  " + time.phase() + "  sun=" + String.format("%.2f", time.sunBrightness()));
         lines.add(String.format("XYZ: %.2f / %.2f / %.2f", player.position.x, player.position.y, player.position.z));
         lines.add(String.format("Yaw: %.1f  Pitch: %.1f  %s",
                 player.yaw, player.pitch,

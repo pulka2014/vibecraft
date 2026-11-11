@@ -45,3 +45,16 @@ application {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+
+// Записываем версию в ресурсы для чтения в рантайме
+tasks.register('generateVersionFile') {
+    def ver = project.version
+    def outDir = layout.buildDirectory.dir("generated/resources/main").get().asFile
+    doLast {
+        outDir.mkdirs()
+        new File(outDir, "version.txt").text = ver.toString()
+    }
+}
+sourceSets.main.resources.srcDir("build/generated/resources/main")
+tasks.named('processResources') { dependsOn 'generateVersionFile' }
