@@ -96,7 +96,7 @@ public class Main {
 
     private static void applySaveTo(GameState gs, SaveManager.SaveData save) {
         // Проверяем, нужно ли спавнить в центре (если save == null или px, pz почти нули)
-        boolean spawnCenter = (save == null) || (Math.abs(save.px) < 4f && Math.abs(save.pz) < 4f);
+        boolean spawnCenter = (save == null) || (Math.abs(save.px) < 0.1f && Math.abs(save.pz) < 0.1f);
         System.out.println("[Main] applySaveTo: save=" + (save != null) + " px=" + (save != null ? save.px : "null") + " pz=" + (save != null ? save.pz : "null") + " spawnCenter=" + spawnCenter);
         if (spawnCenter) {
             float cx = World.SIZE * Chunk.SX / 2f;
@@ -561,7 +561,7 @@ public class Main {
             if (showDebug[0]) debug.update(gs.world, gs.player, gs.time, fps, hit, dt);
 
             saveTimer += dt;
-            if (saveTimer >= 10.0) {
+            if (saveTimer >= 5.0) {
                 saveTimer = 0;
                 try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception ignored) {}
             }
