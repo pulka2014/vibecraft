@@ -7,8 +7,6 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class LoadingScreen {
@@ -25,6 +23,7 @@ public class LoadingScreen {
 
     private volatile int[][] mapColors = null;
     public static final int MAP_SIZE = 25;
+    private final float[] vertexBuffer = new float[MAP_SIZE * MAP_SIZE * 6 * 6]; // 625 квадов * 6 вершин * 6 float
 
     private static final String VERT = """
         #version 330 core
@@ -61,13 +60,11 @@ public class LoadingScreen {
         mapColors[cz][cx] = rgb;
     }
 
-    private void addQuad(List<Float> v, float x0, float y0, float x1, float y1, float r, float g, float b, float a) {
-        v.add(x0); v.add(y0); v.add(r); v.add(g); v.add(b); v.add(a);
-        v.add(x1); v.add(y0); v.add(r); v.add(g); v.add(b); v.add(a);
-        v.add(x1); v.add(y1); v.add(r); v.add(g); v.add(b); v.add(a);
-        v.add(x0); v.add(y0); v.add(r); v.add(g); v.add(b); v.add(a);
-        v.add(x1); v.add(y1); v.add(r); v.add(g); v.add(b); v.add(a);
-        v.add(x0); v.add(y1); v.add(r); v.add(g); v.add(b); v.add(a);
+    private int addQuad(int pos, float x0, float y0, float x1, float y1, float r, float g, float b, float a) {
+        // 6 вершин, каждая (x, y, r, g, b, a)
+        float[] q = {x0,y0,r,g,b,a, x1,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y1,r,g,b,a};
+        System.arraycopy(q, 0, vertexBuffer, pos, 36);
+        return pos + 36;
     }
 
     public void render() {
@@ -76,14 +73,13 @@ public class LoadingScreen {
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         shader.bind();
 
-        List<Float> verts = new ArrayList<>();
+        int pos = 0;
+        // Фон
+        pos = addQuad(pos, -1, -1, 1, 1, 0.08f, 0.10f, 0.14f, 1f);
 
-        // 1) Фон
-        addQuad(verts, -1, -1, 1, 1, 0.08f, 0.10f, 0.14f, 1f);
-
-        // 2) Карта 25x25 (занимает почти весь экран)
+        // Карта (если есть)
         if (mapColors != null) {
-            float cell = 1.8f / MAP_SIZE; // почти весь экран
+            float cell = 1.8f / MAP_SIZE;
             float x0 = -0.9f, y0 = -0.9f;
             for (int cz = 0; cz < MAP_SIZE; cz++) {
                 for (int cx = 0; cx < MAP_SIZE; cx++) {
@@ -91,30 +87,23 @@ public class LoadingScreen {
                     float r, g, b;
                     if (c == -1) { r = 0.18f; g = 0.18f; b = 0.22f; }
                     else { r = ((c >> 16) & 0xFF)/255f; g = ((c >> 8) & 0xFF)/255f; b = (c & 0xFF)/255f; }
-                    float px0 = x0 + cx * cell;
-                    float py0 = y0 + (MAP_SIZE - 1 - cz) * cell;
-                    addQuad(verts, px0, py0, px0 + cell, py0 + cell, r, g, b, 1f);
+                    pos = addQuad(pos, x0 + cx * cell, y0 + (MAP_SIZE - 1 - cz) * cell, x0 + (cx+1)*cell, y0 + (MAP_SIZE - cz)*cell, r, g, b, 1f);
                 }
             }
         }
 
-        // 3) Прогресс-бар
+        // Прогресс-бар
         float totalF = Math.max(1, total.get());
         float prog = loaded.get() / totalF;
-        addQuad(verts, -0.5f, -0.98f, 0.5f, -0.95f, 0.2f, 0.2f, 0.2f, 1f);
-        addQuad(verts, -0.5f, -0.98f, -0.5f + 1.0f * prog, -0.95f, 0.2f, 0.8f, 0.2f, 1f);
+        pos = addQuad(pos, -0.5f, -0.98f, 0.5f, -0.95f, 0.2f, 0.2f, 0.2f, 1f);
+        pos = addQuad(pos, -0.5f, -0.98f, -0.5f + 1.0f * prog, -0.95f, 0.2f, 0.8f, 0.2f, 1f);
 
-        // Отрисовка одним вызовом
-        if (!verts.isEmpty()) {
-            float[] v = new float[verts.size()];
-            for (int i = 0; i < verts.size(); i++) v[i] = verts.get(i);
-            if (v.length == 0) return; // защита
-
+        if (pos > 0) {
             GL30.glBindVertexArray(vao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
             try (MemoryStack st = MemoryStack.stackPush()) {
-                FloatBuffer fb = st.mallocFloat(v.length);
-                fb.put(v).flip();
+                FloatBuffer fb = st.mallocFloat(pos);
+                fb.put(vertexBuffer, 0, pos).flip();
                 GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
             }
             GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 6*4, 0L);
@@ -122,11 +111,11 @@ public class LoadingScreen {
             GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
             GL20.glEnableVertexAttribArray(1);
 
-            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, v.length / 6);
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, pos / 6);
             GL30.glBindVertexArray(0);
         }
 
-        // 4) Текст (отдельно, через FontRenderer)
+        // Текст
         font.drawString("Loading world...", -0.2f, 0.95f, 0.04f);
         String pct = String.format("%.0f%%", prog * 100);
         font.drawString(pct, -0.1f, -0.92f, 0.03f);
