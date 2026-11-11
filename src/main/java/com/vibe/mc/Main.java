@@ -446,6 +446,11 @@ public class Main {
                     SaveManager.SaveData currentSave = SaveManager.load();
                     applySaveTo(gs, currentSave);
                     
+                    // ПРИНУДИТЕЛЬНО пересобираем все меши в главном потоке (GL)
+                    System.out.println("[Main] rebuilding all meshes after load...");
+                    gs.world.rebuildAll();
+                    System.out.println("[Main] meshes rebuilt.");
+
                     gs.loadingScreenActive = false;
                     GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
                     System.out.println("[Main] play slot " + gs.activeSlot);
