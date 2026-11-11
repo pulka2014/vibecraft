@@ -328,7 +328,20 @@ public class Main {
                 if (selBlock == null) return;
                 int px = hit[0] + hit[3], py = hit[1] + hit[4], pz = hit[2] + hit[5];
                 if (hit[3] == 0 && hit[4] == 0 && hit[5] == 0) return;
-                gs.world.placeBlock(px, py, pz, selBlock, gs.player.position, hit[3], hit[4], hit[5]);
+                if (selBlock == BlockType.FURNACE) {
+                    // front должен смотреть НА игрока => rot по -yaw
+                    // yaw 0 = восток(+X), 90 = юг(+Z), 180 = запад(-X), 270 = север(-Z)
+                    // front (в chunk) на -Z при rot 2; согласуем:
+                    float yaw = ((gs.player.yaw % 360) + 360) % 360;
+                    int rot;
+                    if (yaw >= 315 || yaw < 45) rot = 3;       // игрок смотрит на +X => front на -X
+                    else if (yaw >= 45 && yaw < 135) rot = 2;   // +Z => -Z
+                    else if (yaw >= 135 && yaw < 225) rot = 1;  // -X => +X
+                    else rot = 0;                               // -Z => +Z
+                    gs.world.placeBlock(px, py, pz, selBlock, gs.player.position, rot);
+                } else {
+                    gs.world.placeBlock(px, py, pz, selBlock, gs.player.position, hit[3], hit[4], hit[5]);
+                }
                 if (gs.world.isSolid(px, py, pz)) {
                     gs.hotbar.consumeSelected();
                     sound.playPlace(selBlock);
