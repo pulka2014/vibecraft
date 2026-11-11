@@ -449,7 +449,7 @@ public class Main {
 
                         // Создаём LoadingScreen и запускаем загрузку в фоне
                         gs.loadingScreen = new LoadingScreen(font);
-                        gs.loadingScreen.total.set(World.SIZE * World.SIZE);
+                        gs.loadingScreen.total.set(World.SIZE * Chunk.SX * World.SIZE * Chunk.SZ);
                         gs.loadingScreen.loaded.set(0);
                         gs.loadingScreen.finished = false;
                         gs.loadingScreen.error = false;
