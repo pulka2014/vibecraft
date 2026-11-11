@@ -88,12 +88,6 @@ public class Main {
             return new LoadedWorld(w, save);
         } else {
             World w = new World((int)(Math.random() * Integer.MAX_VALUE));
-            w.inventory.addBlock(BlockType.PLANKS, 64);
-            w.inventory.addBlock(BlockType.CRAFTING_TABLE, 1);
-            w.inventory.addItem(ItemType.WOODEN_PICKAXE, 1);
-            w.inventory.addItem(ItemType.WOODEN_AXE, 1);
-            w.inventory.addItem(ItemType.WOODEN_SHOVEL, 1);
-            w.inventory.addItem(ItemType.STICK, 16);
             return new LoadedWorld(w, null);
         }
     }
