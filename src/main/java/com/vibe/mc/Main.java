@@ -227,7 +227,13 @@ public class Main {
                 return;
             }
 
-            if (pause.isOpen() && key == GLFW.GLFW_KEY_Q) { GLFW.glfwSetWindowShouldClose(win, true); return; }
+            if (pause.isOpen() && key == GLFW.GLFW_KEY_Q) {
+                try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {}
+                pause.close();
+                mainMenu.setOpen(true);
+                GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+                return;
+            }
 
             if (key >= GLFW.GLFW_KEY_1 && key <= GLFW.GLFW_KEY_9) {
                 gs.hotbar.select(key - GLFW.GLFW_KEY_1);
@@ -278,7 +284,12 @@ public class Main {
                     if ("Resume".equals(clicked)) { pause.close(); GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED); }
                     if ("Save".equals(clicked)) { try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {} }
                     if ("Settings".equals(clicked)) { pause.openSettings(); }
-                    if ("Quit".equals(clicked)) { try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {} GLFW.glfwSetWindowShouldClose(win, true); }
+                    if ("Quit".equals(clicked)) {
+                        try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {}
+                        pause.close();
+                        mainMenu.setOpen(true);
+                        GLFW.glfwSetInputMode(win, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+                    }
                     if ("settings:back".equals(clicked)) { pause.closeSettings(); }
                 }
                 return;
