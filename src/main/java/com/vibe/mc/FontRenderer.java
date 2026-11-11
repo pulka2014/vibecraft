@@ -191,33 +191,38 @@ public class FontRenderer {
         GL20.glEnableVertexAttribArray(1);
 
         float charW = charH * 0.6f;
+        float step = charW * 0.9f;
+        int n = str.length();
+        // Общий центр строки (по горизонтали):
+        float totalWidth = (n - 1) * step + charW;
+        float pivotX = x + totalWidth / 2f;
+        float pivotY = y - charH / 2f;
         float cos = (float)Math.cos(angleRad), sin = (float)Math.sin(angleRad);
+
         float cx = x;
-        for (int i = 0; i < str.length(); i++) {
+        for (int i = 0; i < n; i++) {
             char c = str.charAt(i);
-            if (c == '\n') { cx = x; y -= charH * 1.4f; continue; }
             if (c < 32 || c > 127) c = '?';
             float u0 = (c % 16) / 16f;
             float v0 = (c / 16) / 16f;
             float u1 = u0 + 1f/16f;
             float v1 = v0 + 1f/16f;
-            // центр символа
-            float mx = cx + charW/2f;
-            float my = y - charH/2f;
-            // 4 угла (dx, dy относительно центра)
-            float[] dxdy = {
-                -charW/2f,  charH/2f,
-                 charW/2f,  charH/2f,
-                 charW/2f, -charH/2f,
-                -charW/2f, -charH/2f
+            // 4 угла в мировых координатах (до поворота)
+            float[][] corners = {
+                { cx,        y        },
+                { cx + charW, y        },
+                { cx + charW, y - charH},
+                { cx,        y - charH},
             };
             float[] uvs = { u0, v0, u1, v0, u1, v1, u0, v1 };
             float[] v = new float[16];
             for (int k = 0; k < 4; k++) {
-                float rx = dxdy[k*2]   * cos - dxdy[k*2+1] * sin;
-                float ry = dxdy[k*2]   * sin + dxdy[k*2+1] * cos;
-                v[k*4 + 0] = mx + rx;
-                v[k*4 + 1] = my + ry;
+                float dx = corners[k][0] - pivotX;
+                float dy = corners[k][1] - pivotY;
+                float rx = dx * cos - dy * sin;
+                float ry = dx * sin + dy * cos;
+                v[k*4 + 0] = pivotX + rx;
+                v[k*4 + 1] = pivotY + ry;
                 v[k*4 + 2] = uvs[k*2];
                 v[k*4 + 3] = uvs[k*2+1];
             }
@@ -227,7 +232,7 @@ public class FontRenderer {
                 GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
             }
             GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
-            cx += charW * 0.9f;
+            cx += step;
         }
         GL30.glBindVertexArray(0);
         GL20.glUniform4f(uColor, 1, 1, 1, 1);
