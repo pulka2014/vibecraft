@@ -61,9 +61,20 @@ public class LoadingScreen {
         float[] v = { x0,y0,r,g,b,a, x1,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y1,r,g,b,a };
         try (MemoryStack st = MemoryStack.stackPush()) {
             FloatBuffer fb = st.mallocFloat(v.length); fb.put(v).flip();
+            
+            // Принудительно привязываем VAO и VBO каждый раз
+            GL30.glBindVertexArray(vao);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
+            
+            // Настраиваем атрибуты
+            GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 6*4, 0L);
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
+            GL20.glEnableVertexAttribArray(1);
+            
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
         }
-        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
     }
 
     public void render() {
@@ -100,8 +111,6 @@ public class LoadingScreen {
                     drawQuad(px0, py0, px0 + cell, py0 + cell, r, g, b, 1f);
                 }
             }
-            // ВРЕМЕННЫЙ ТЕСТ: огромный красный квадрат там, где должна быть карта
-            drawQuad(-0.4f, 0.0f, 0.0f, 0.4f, 1f, 0f, 1f, 1f); // розовый
             System.out.println("[Loading] map loop executed, cell=" + cell + " x0=" + x0 + " y0=" + y0);
             // Яркая рамка вокруг карты
             drawQuad(-0.41f, -0.01f, 0.41f, 0.01f, 1f, 1f, 0f, 1f); // низ
