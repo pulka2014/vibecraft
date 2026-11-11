@@ -22,7 +22,7 @@ public class LoadingScreen {
     public volatile World world = null;
 
     private volatile int[][] mapColors = null;
-    public static final int MAP_SIZE = 25;
+    public static final int MAP_SIZE = 400;
     private final float[] vertexBuffer = new float[MAP_SIZE * MAP_SIZE * 6 * 6 + 2000]; // 625 квадов + запас
 
     private static final String VERT = """
@@ -83,18 +83,14 @@ public class LoadingScreen {
 
         // Карта (если есть)
         if (mapColors != null) {
-            // Карта должна быть КВАДРАТНОЙ на экране, несмотря на пропорции 16:9
-            // NDC: X от -1 до 1 (ширина), Y от -1 до 1 (высота)
-            // 1 единица по Y на экране = 1 единица по X * (16/9)
             float aspect = 16.0f / 9.0f;
-            float mapSizeY = 0.8f;             // размер карты по вертикали
-            float mapSizeX = mapSizeY / aspect; // размер по горизонтали
+            float mapSizeY = 0.8f;
+            float mapSizeX = mapSizeY / aspect;
             float cellY = mapSizeY / MAP_SIZE;
             float cellX = mapSizeX / MAP_SIZE;
             
-            // Центрируем карту ровно посередине
             float startX = -mapSizeX / 2f;
-            float startY = -mapSizeY / 2f + 0.1f; // чуть выше, чтобы не перекрывалось с прогрессом
+            float startY = -mapSizeY / 2f + 0.1f;
             
             for (int cz = 0; cz < MAP_SIZE; cz++) {
                 for (int cx = 0; cx < MAP_SIZE; cx++) {

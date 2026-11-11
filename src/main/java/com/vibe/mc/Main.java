@@ -464,55 +464,34 @@ public class Main {
                                 LoadedWorld lw = loadOrCreateWorld(slotFinal);
                                 World w = lw.world;
                                 int loadedChunks = 0;
-                                for (int cz = 0; cz < World.SIZE; cz++) {
-                                    for (int cx = 0; cx < World.SIZE; cx++) {
-                                        Chunk c = w.chunks.get(new ChunkPos(cx, cz));
-                                        int color = 0x000000;
-                                        if (c != null) {
-                                            // Считаем, сколько блоков каждого типа на поверхности чанка
-                                            int grass = 0, dirt = 0, stone = 0, ore = 0, wood = 0, sand = 0, leaves = 0, other = 0;
-                                            for (int x = 0; x < Chunk.SX; x++) {
-                                                for (int z = 0; z < Chunk.SZ; z++) {
-                                                    // Ищем самый верхний НЕ воздушный блок в колонке
-                                                    for (int y = Chunk.SY - 1; y >= 0; y--) {
-                                                        BlockType b = c.get(x, y, z);
-                                                        if (b == BlockType.AIR) continue;
-                                                        switch (b) {
-                                                            case GRASS -> grass++;
-                                                            case DIRT -> dirt++;
-                                                            case STONE, COBBLESTONE -> stone++;
-                                                            case COAL_ORE, IRON_ORE, DIAMOND_ORE -> ore++;
-                                                            case WOOD, PLANKS -> wood++;
-                                                            case LEAVES -> leaves++;
-                                                            case SAND -> sand++;
-                                                            default -> other++;
-                                                        }
-                                                        break; // нашли поверхность, идем к следующей колонке
-                                                    }
-                                                }
-                                            }
-                                            
-                                            // Выбираем самый частый блок
-                                            int max = Math.max(grass, Math.max(dirt, Math.max(stone, Math.max(ore, Math.max(wood, Math.max(leaves, sand))))));
-                                            if (max == grass) color = 0x4CAF50;       // зелёный
-                                            else if (max == wood) color = 0x8B5A2B;   // коричневый
-                                            else if (max == leaves) color = 0x2E7D32; // тёмно-зелёный
-                                            else if (max == dirt) color = 0x795548;   // грязно-коричневый
-                                            else if (max == stone) color = 0x888888;  // серый
-                                            else if (max == ore) color = 0x444444;    // тёмно-серый
-                                            else if (max == sand) color = 0xDCD6A0;   // песочный
-                                            else color = 0x555555;
-                                            
-                                            if (cx == 0 && cz == 0) {
-                                                System.out.println("[Map] chunk(0,0): grass=" + grass + " dirt=" + dirt + " stone=" + stone + " ore=" + ore + " wood=" + wood + " leaves=" + leaves + " sand=" + sand + " other=" + other + " -> color=0x" + Integer.toHexString(color));
-                                            }
+                                int totalBlocks = World.SIZE * Chunk.SX;
+                                for (int bz = 0; bz < totalBlocks; bz++) {
+                                    for (int bx = 0; bx < totalBlocks; bx++) {
+                                        BlockType topBlock = BlockType.AIR;
+                                        for (int y = Chunk.SY - 1; y >= 0; y--) {
+                                            BlockType b = w.getBlock(bx, y, bz);
+                                            if (b != BlockType.AIR) { topBlock = b; break; }
                                         }
-                                        gs.loadingScreen.setChunkColor(cx, cz, color);
+                                        
+                                        int color = 0x000000;
+                                        if (topBlock == BlockType.GRASS) color = 0x4CAF50;
+                                        else if (topBlock == BlockType.DIRT) color = 0x795548;
+                                        else if (topBlock == BlockType.STONE || topBlock == BlockType.COBBLESTONE) color = 0x888888;
+                                        else if (topBlock == BlockType.SAND) color = 0xDCD6A0;
+                                        else if (topBlock == BlockType.WOOD || topBlock == BlockType.PLANKS) color = 0x8B5A2B;
+                                        else if (topBlock == BlockType.LEAVES) color = 0x2E7D32;
+                                        else if (topBlock == BlockType.COAL_ORE || topBlock == BlockType.IRON_ORE || topBlock == BlockType.DIAMOND_ORE) color = 0x444444;
+                                        else if (topBlock == BlockType.AIR) color = 0x000000;
+                                        else color = 0x555555;
+                                        
+                                        gs.loadingScreen.setChunkColor(bx, bz, color);
                                         loadedChunks++;
-                                        gs.loadingScreen.loaded.set(loadedChunks);
-                                        try { Thread.sleep(2); } catch (InterruptedException ignored) {}
+                                        if (loadedChunks % 100 == 0) {
+                                            gs.loadingScreen.loaded.set(loadedChunks);
+                                        }
                                     }
                                 }
+                                gs.loadingScreen.loaded.set(totalBlocks * totalBlocks);
                                 w.drops.setItemAtlas(itemTex);
                                 gs.loadingScreen.world = w;
                                 gs.loadingScreen.finished = true;
