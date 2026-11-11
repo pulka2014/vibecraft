@@ -264,6 +264,24 @@ public class Main {
                 return;
             }
 
+            // Q — выбросить 1 предмет из выбранного слота
+            if (key == GLFW.GLFW_KEY_Q && !pause.isOpen() && !gs.invScreen.isOpen() && !gs.craftScreen.isOpen() && !gs.furnaceScreen.isOpen()) {
+                Inventory.Slot slot = gs.hotbar.selectedSlot();
+                if (slot != null && !slot.isEmpty()) {
+                    // Спавним дроп прямо перед игроком
+                    float dropX = gs.player.position.x + gs.player.getForward().x * 0.5f;
+                    float dropY = gs.player.position.y + 1.0f;
+                    float dropZ = gs.player.position.z + gs.player.getForward().z * 0.5f;
+                    if (slot.isBlock()) {
+                        gs.world.drops.spawn((int)dropX, (int)dropY, (int)dropZ, slot.block);
+                    } else if (slot.isItem()) {
+                        gs.world.drops.spawnItem((int)dropX, (int)dropY, (int)dropZ, slot.item);
+                    }
+                    gs.hotbar.consumeSelected();
+                }
+                return;
+            }
+
             if (key == GLFW.GLFW_KEY_F8) {
                 XRay.enabled = !XRay.enabled;
                 System.out.println("[XRay] " + (XRay.enabled ? "ON" : "OFF"));
@@ -414,10 +432,8 @@ public class Main {
                     }
                     w.drops.setItemAtlas(itemTex);
                     gs.world = w;
-                    gs.player = new Player();
-                    gs.player.position.set(World.SIZE * Chunk.SX / 2f + 0.5f, 70f, World.SIZE * Chunk.SZ / 2f + 0.5f);
-                    gs.player.yaw = 0f;
-                    gs.player.pitch = 0f;
+                    gs.player = new Player(); // позиция будет установлена applySaveTo
+
                     gs.time = new TimeOfDay();
                     gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
                     gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
