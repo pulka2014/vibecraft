@@ -79,8 +79,8 @@ public class LoadingScreen {
         GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
         GL20.glEnableVertexAttribArray(1);
 
-        // ТЕСТ: красный фон
-        drawQuad(-1, -1, 1, 1, 1f, 0f, 0f, 1f);
+        // Фон
+        drawQuad(-1, -1, 1, 1, 0.08f, 0.10f, 0.14f, 1f);
 
         // 2) Заголовок
         font.drawString("Loading world...", -0.3f, 0.7f, 0.05f);
@@ -100,6 +100,11 @@ public class LoadingScreen {
                     drawQuad(px0, py0, px0 + cell, py0 + cell, r, g, b, 1f);
                 }
             }
+            // Яркая рамка вокруг карты
+            drawQuad(-0.41f, -0.01f, 0.41f, 0.01f, 1f, 1f, 0f, 1f); // низ
+            drawQuad(-0.41f, 0.79f, 0.41f, 0.81f, 1f, 1f, 0f, 1f);   // верх
+            drawQuad(-0.41f, -0.01f, -0.39f, 0.81f, 1f, 1f, 0f, 1f); // лево
+            drawQuad(0.39f, -0.01f, 0.41f, 0.81f, 1f, 1f, 0f, 1f);   // право
         }
 
         // 4) Прогресс-бар
