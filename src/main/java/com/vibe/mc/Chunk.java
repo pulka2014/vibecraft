@@ -355,7 +355,5 @@ public class Chunk {
         GL30.glBindVertexArray(vao);
         GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
         GL30.glBindVertexArray(0);
-        int rerr = org.lwjgl.opengl.GL11.glGetError();
-        if (rerr != 0) Logger.error("[Chunk] render error 0x" + Integer.toHexString(rerr) + " idx=" + indexCount);
     }
 }

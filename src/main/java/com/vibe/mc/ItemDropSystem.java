@@ -8,9 +8,9 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -20,9 +20,9 @@ public class ItemDropSystem {
     public void setItemAtlas(int tex) { this.itemAtlasTex = tex; }
     private final List<DroppedItem> items = new ArrayList<>();
     private final Random rng = new Random();
-    private final int vao, vbo, ebo;
+    private int vao, vbo;
     private final Shader shader;
-    private final int uProj, uView, uModel, uTex, uUVOffset, uTintColor;
+    private final int uProj, uView, uModel, uTex, uUseAtlas;
 
     private static final String VERT = """
         #version 330 core
@@ -36,35 +36,14 @@ public class ItemDropSystem {
         #version 330 core
         in vec2 vUV;
         uniform sampler2D uTex;
-        uniform float uUVOffset;
-        uniform vec3 uTintColor;
+        uniform int uUseAtlas;
         out vec4 FragColor;
         void main() {
-            vec4 c = texture(uTex, vUV + vec2(uUVOffset, 0.0));
-            c.rgb *= uTintColor;
+            vec4 c = texture(uTex, vUV);
+            if (uUseAtlas == 1) c.rgb *= vec3(0.35, 0.85, 0.30); // травяной дроп
             FragColor = c;
         }
         """;
-
-    // маленький куб 0.25, UV: u = 0..TILE_U (один тайл), v = 0..1 (весь тайл по высоте)
-    private static final float[] CUBE = {
-        // front
-        -0.125f,-0.125f, 0.125f, 0f,1f,   0.125f,-0.125f, 0.125f, TextureAtlas.TILE_U,1f,   0.125f,0.125f, 0.125f, TextureAtlas.TILE_U,0f,  -0.125f,0.125f, 0.125f, 0f,0f,
-        // back
-         0.125f,-0.125f,-0.125f, 0f,1f,  -0.125f,-0.125f,-0.125f, TextureAtlas.TILE_U,1f,  -0.125f,0.125f,-0.125f, TextureAtlas.TILE_U,0f,   0.125f,0.125f,-0.125f, 0f,0f,
-        // top
-        -0.125f,0.125f, 0.125f, 0f,1f,   0.125f,0.125f, 0.125f, TextureAtlas.TILE_U,1f,   0.125f,0.125f,-0.125f, TextureAtlas.TILE_U,0f,  -0.125f,0.125f,-0.125f, 0f,0f,
-        // bottom
-        -0.125f,-0.125f,-0.125f, 0f,1f,   0.125f,-0.125f,-0.125f, TextureAtlas.TILE_U,1f,   0.125f,-0.125f, 0.125f, TextureAtlas.TILE_U,0f,  -0.125f,-0.125f, 0.125f, 0f,0f,
-        // left
-        -0.125f,-0.125f,-0.125f, 0f,1f,  -0.125f,-0.125f, 0.125f, TextureAtlas.TILE_U,1f,  -0.125f,0.125f, 0.125f, TextureAtlas.TILE_U,0f,  -0.125f,0.125f,-0.125f, 0f,0f,
-        // right
-         0.125f,-0.125f, 0.125f, 0f,1f,   0.125f,-0.125f,-0.125f, TextureAtlas.TILE_U,1f,   0.125f,0.125f,-0.125f, TextureAtlas.TILE_U,0f,   0.125f,0.125f, 0.125f, 0f,0f,
-    };
-    private static final int[] INDICES = {
-        0,1,2, 2,3,0, 4,5,6, 6,7,4, 8,9,10, 10,11,8,
-        12,13,14, 14,15,12, 16,17,18, 18,19,16, 20,21,22, 22,23,20
-    };
 
     public ItemDropSystem() {
         shader = new Shader(VERT, FRAG);
@@ -72,29 +51,9 @@ public class ItemDropSystem {
         uView = shader.uniform("uView");
         uModel = shader.uniform("uModel");
         uTex = shader.uniform("uTex");
-        uUVOffset = shader.uniform("uUVOffset");
-        uTintColor = shader.uniform("uTintColor");
-
+        uUseAtlas = shader.uniform("uUseAtlas");
         vao = GL30.glGenVertexArrays();
         vbo = GL15.glGenBuffers();
-        ebo = GL15.glGenBuffers();
-        GL30.glBindVertexArray(vao);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            FloatBuffer fb = stack.mallocFloat(CUBE.length);
-            fb.put(CUBE).flip();
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_STATIC_DRAW);
-            IntBuffer ib = stack.mallocInt(INDICES.length);
-            ib.put(INDICES).flip();
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, ebo);
-            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, ib, GL15.GL_STATIC_DRAW);
-        }
-        int stride = 5 * 4;
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, stride, 0L);
-        GL20.glEnableVertexAttribArray(0);
-        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, stride, 3L*4L);
-        GL20.glEnableVertexAttribArray(1);
-        GL30.glBindVertexArray(0);
     }
 
     public void spawnItem(int bx, int by, int bz, ItemType item) {
@@ -137,63 +96,108 @@ public class ItemDropSystem {
         }
     }
 
+    /** Записывает куб блока или квад иконки предмета с UV, вписанным в нужный тайл. */
+    private void drawBlockCube(BlockType type, float size) {
+        int tile = type.tileSide;
+        float tu = TextureAtlas.TILE_U;
+        float u0 = tile * tu, u1 = u0 + tu;
+        float s = size * 0.5f;
+
+        // 6 граней * 4 вершины * (3 pos + 2 uv) = 6*4*5 = 120 float
+        float[] v = new float[6 * 4 * 5];
+        // Порядок: +X, -X, +Y, -Y, +Z, -Z. Каждая грань — 4 вершины по 3 координаты.
+        int k = 0;
+        float[][][] faces = {
+            {{s,-s, s},{s,-s,-s},{s, s,-s},{s, s, s}},     // +X
+            {{-s,-s,-s},{-s,-s, s},{-s, s, s},{-s, s,-s}}, // -X
+            {{-s, s, s},{s, s, s},{s, s,-s},{-s, s,-s}},   // +Y
+            {{-s,-s,-s},{s,-s,-s},{s,-s, s},{-s,-s, s}},   // -Y
+            {{-s,-s, s},{s,-s, s},{s, s, s},{-s, s, s}},   // +Z
+            {{s,-s,-s},{-s,-s,-s},{-s, s,-s},{s, s,-s}}    // -Z
+        };
+        for (float[][] face : faces) {
+            v[k++] = face[0][0]; v[k++] = face[0][1]; v[k++] = face[0][2]; v[k++] = u0; v[k++] = 1f;
+            v[k++] = face[1][0]; v[k++] = face[1][1]; v[k++] = face[1][2]; v[k++] = u1; v[k++] = 1f;
+            v[k++] = face[2][0]; v[k++] = face[2][1]; v[k++] = face[2][2]; v[k++] = u1; v[k++] = 0f;
+            v[k++] = face[3][0]; v[k++] = face[3][1]; v[k++] = face[3][2]; v[k++] = u0; v[k++] = 0f;
+        }
+        GL30.glBindVertexArray(vao);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+        FloatBuffer fb = MemoryUtil.memAllocFloat(v.length);
+        fb.put(v).flip();
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
+        MemoryUtil.memFree(fb);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5*4, 0L);
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5*4, 3L*4L);
+        GL20.glEnableVertexAttribArray(1);
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 4, 4);
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 8, 4);
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 12, 4);
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 16, 4);
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 20, 4);
+        GL30.glBindVertexArray(0);
+    }
+
+    private void drawItemQuad(ItemType item, float size) {
+        float tu = ItemAtlas.TILE_U;
+        float u0 = item.id * tu, u1 = u0 + tu;
+        float s = size * 0.5f;
+        float[] v = {
+            -s,-s,0, u0, 1f,
+             s,-s,0, u1, 1f,
+             s, s,0, u1, 0f,
+            -s, s,0, u0, 0f,
+        };
+        GL30.glBindVertexArray(vao);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+        FloatBuffer fb = MemoryUtil.memAllocFloat(v.length);
+        fb.put(v).flip();
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
+        MemoryUtil.memFree(fb);
+        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 5*4, 0L);
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 5*4, 3L*4L);
+        GL20.glEnableVertexAttribArray(1);
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
+        GL30.glBindVertexArray(0);
+    }
+
     public void render(Matrix4f proj, Matrix4f view, int atlasTex) {
         if (items.isEmpty()) return;
         shader.bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
         GL20.glUniform1i(uTex, 0);
-        GL30.glBindVertexArray(vao);
         try (MemoryStack stack = MemoryStack.stackPush()) {
             FloatBuffer pb = stack.mallocFloat(16);
             proj.get(pb); GL20.glUniformMatrix4fv(uProj, false, pb);
             view.get(pb); GL20.glUniformMatrix4fv(uView, false, pb);
         }
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         for (DroppedItem it : items) {
             Matrix4f m = new Matrix4f()
                 .translate(it.pos.x, it.pos.y, it.pos.z)
-                .rotateY(it.age * 2f)
-                .rotateX(45f * (float)Math.PI/180f)
-                .rotateZ(45f * (float)Math.PI/180f);
+                .rotateY(it.age * 2f);
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 FloatBuffer pb = stack.mallocFloat(16);
                 m.get(pb);
                 GL20.glUniformMatrix4fv(uModel, false, pb);
             }
             if (it.item != null) {
-                // 2D иконка: UV задаём напрямую (0..TILE_U), без uUVOffset
-                GL11.glEnable(GL11.GL_BLEND);
-                GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, itemAtlasTex);
-                GL20.glUniform1f(uUVOffset, it.item.id * ItemAtlas.TILE_U);
-                GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
-                float s = 0.25f;
-                float[] verts = {
-                    -s, -s, 0, 0f, 1f,
-                     s, -s, 0, ItemAtlas.TILE_U, 1f,
-                     s,  s, 0, ItemAtlas.TILE_U, 0f,
-                    -s,  s, 0, 0f, 0f,
-                };
-                try (MemoryStack stack = MemoryStack.stackPush()) {
-                    FloatBuffer fb = stack.mallocFloat(verts.length);
-                    fb.put(verts).flip();
-                    GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
-                }
-                GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
-                GL11.glDisable(GL11.GL_BLEND);
+                GL20.glUniform1i(uUseAtlas, 0);
+                drawItemQuad(it.item, 0.5f);
             } else {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
-                GL20.glUniform1f(uUVOffset, it.type.tileSide * TextureAtlas.TILE_U);
-                GL20.glUniform1f(uUVOffset, 0f); // блок: UV уже в CUBE 0..TILE_U, без сдвига
-                if (it.type == BlockType.GRASS) GL20.glUniform3f(uTintColor, 0.35f, 0.85f, 0.30f);
-                else if (it.type == BlockType.LEAVES) GL20.glUniform3f(uTintColor, 0.25f, 0.65f, 0.20f);
-                else GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
-                GL11.glDrawElements(GL11.GL_TRIANGLES, INDICES.length, GL11.GL_UNSIGNED_INT, 0);
+                boolean tint = (it.type == BlockType.GRASS || it.type == BlockType.LEAVES);
+                GL20.glUniform1i(uUseAtlas, tint ? 1 : 0);
+                drawBlockCube(it.type, 0.25f);
             }
         }
-        GL30.glBindVertexArray(0);
+        GL11.glDisable(GL11.GL_BLEND);
     }
 
     public int count() { return items.size(); }

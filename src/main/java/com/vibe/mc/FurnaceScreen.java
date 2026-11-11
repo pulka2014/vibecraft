@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 import java.nio.FloatBuffer;
 
-/** Печь 3 слота: 0=материал, 1=топливо, 2=результат. */
+/** Печь: top=grid[0], fuel=grid[1], result=grid[2]. Топливо не тратится без сырья. */
 public class FurnaceScreen {
     private final Inventory inventory;
     private final int atlasTex, itemAtlasTex;
@@ -19,12 +19,11 @@ public class FurnaceScreen {
     private float mouseX = 0, mouseY = 0;
     private Inventory.Slot held = null;
     public final Inventory.Slot[] grid = new Inventory.Slot[3];
+    private double burnTime = 0, maxBurnTime = 1;
+    private float smeltProgress = 0;
 
     public static final float SLOT = 0.08f;
     public static final float GAP = 0.005f;
-    private double burnTime = 0, maxBurnTime = 1;
-    private float smeltProgress = 0;
-    private BlockType activeFuel = null;
 
     private static final String VERT = """
         #version 330 core
@@ -55,13 +54,10 @@ public class FurnaceScreen {
         vbo = GL15.glGenBuffers();
     }
     public boolean isOpen() { return open; }
-    public void open() { open = true; System.out.println("[Furnace] open"); }
+    public void open() { open = true; }
     public void close() {
         open = false;
-        for (Inventory.Slot s : grid) if (!s.isEmpty()) {
-            if (s.isBlock()) inventory.addBlock(s.block, s.count); else inventory.addItem(s.item, s.count);
-            s.clear();
-        }
+        // held возвращаем, а grid ОСТАЁТСЯ — уголь/сырьё не выпадают
         if (held != null && !held.isEmpty()) {
             if (held.isBlock()) inventory.addBlock(held.block, held.count); else inventory.addItem(held.item, held.count);
             held = null;
@@ -69,99 +65,7 @@ public class FurnaceScreen {
     }
     public void setMouse(float nx, float ny) { mouseX = nx; mouseY = ny; }
 
-    private float[] slotRect(int i) {
-        // 3 слота: top (вход), bottom (топливо), right (результат)
-        if (i == 0) return new float[]{-0.30f, 0.30f, -0.22f, 0.38f};
-        if (i == 1) return new float[]{-0.30f, 0.15f, -0.22f, 0.23f};
-        return new float[]{-0.10f, 0.22f, -0.02f, 0.30f};
-    }
-
-    /** Плавка: раз в ~10 секунд. Возвращает true, если что-то переплавлено. */
-    public boolean updateFurnace() {
-        Inventory.Slot fuel = grid[1];
-        Inventory.Slot mat = grid[0];
-        // Если нет сырья — топливо не тратим
-        if (mat.isEmpty() || !smeltable(mat, grid[2])) {
-            return false;
-        }
-        if (burnTime <= 0) {
-            if (!fuel.isEmpty() && isFuel(fuel)) {
-                maxBurnTime = fuelForSlot(fuel);
-                burnTime = maxBurnTime;
-                fuel.count--; if (fuel.count <= 0) fuel.clear();
-            } else {
-                return false; // нет топлива — не плавим
-            }
-        }
-        if (burnTime > 0) burnTime -= 0.05;
-        Inventory.Slot res = grid[2];
-        smeltProgress += 0.02f;
-        if (smeltProgress >= 1f) {
-            smeltProgress = 0;
-            if (res.isEmpty()) { res.item = ItemType.IRON_INGOT; res.count = 1; }
-            else if (res.isItem() && res.item == ItemType.IRON_INGOT && res.count < Inventory.MAX_STACK) res.count++;
-            else return false;
-            mat.count--; if (mat.count <= 0) mat.clear();
-            return true;
-        }
-        return false;
-    }
-
-    private boolean isFuel(Inventory.Slot s) {
-        if (s.isBlock() && (s.block == BlockType.WOOD || s.block == BlockType.PLANKS)) return true;
-        if (s.isItem() && s.item == ItemType.COAL) return true;
-        return false;
-    }
-    private float fuelForSlot(Inventory.Slot s) {
-        if (s.isItem() && s.item == ItemType.COAL) return 8f;
-        if (s.isBlock() && s.block == BlockType.WOOD) return 4f;
-        if (s.isBlock() && s.block == BlockType.PLANKS) return 1.5f;
-        return 0f;
-    }
-    private boolean smeltable(Inventory.Slot mat, Inventory.Slot res) {
-        return mat.isItem() && mat.item == ItemType.RAW_IRON
-            && (res.isEmpty() || (res.isItem() && res.item == ItemType.IRON_INGOT));
-    }
-
-    public void click(boolean right) {
-        System.out.println("[Furnace.click] right=" + right + " x=" + mouseX + " y=" + mouseY);
-        for (int i = 0; i < 3; i++) {
-            float[] r = slotRect(i);
-            if (mouseX >= r[0] && mouseX <= r[2] && mouseY >= r[1] && mouseY <= r[3]) {
-                if (held == null) {
-                    if (!grid[i].isEmpty()) { held = grid[i].copy(); grid[i].clear(); }
-                } else {
-                    if (grid[i].isEmpty()) { grid[i].block = held.block; grid[i].item = held.item; grid[i].count = held.count; held = null; }
-                    else if ((held.isBlock() && grid[i].isBlock() && held.block == grid[i].block)
-                          || (held.isItem() && grid[i].isItem() && held.item == grid[i].item)) {
-                        int can = Math.min(Inventory.MAX_STACK - grid[i].count, held.count);
-                        grid[i].count += can; held.count -= can; if (held.count <= 0) held = null;
-                    }
-                }
-                return;
-            }
-        }
-        // инвентарь (27+9): тот же layout, что в InventoryScreen
-        for (int i = 0; i < Inventory.TOTAL; i++) {
-            float[] r = invSlotRect(i);
-            if (mouseX >= r[0] && mouseX <= r[2] && mouseY >= r[1] && mouseY <= r[3]) {
-                Inventory.Slot s = inventory.slot(i);
-                if (held == null) {
-                    if (s.isEmpty()) return;
-                    held = s.copy(); s.clear();
-                } else {
-                    if (s.isEmpty()) { s.block = held.block; s.item = held.item; s.count = held.count; held = null; }
-                    else if ((held.isBlock() && s.isBlock() && held.block == s.block)
-                          || (held.isItem() && s.isItem() && held.item == s.item)) {
-                        int can = Math.min(Inventory.MAX_STACK - s.count, held.count);
-                        s.count += can; held.count -= can; if (held.count <= 0) held = null;
-                    }
-                }
-                return;
-            }
-        }
-    }
-
+    // === ТОЧНАЯ КОПИЯ InventoryScreen.slotRect ===
     private float[] invSlotRect(int i) {
         float totalW = 9 * SLOT + 8 * GAP;
         float startX = -totalW / 2f;
@@ -181,6 +85,91 @@ public class FurnaceScreen {
         return new float[]{x0, y0, x0 + SLOT, y0 + SLOT};
     }
 
+    private float[] slotRect(int i) {
+        if (i == 0) return new float[]{-0.30f, 0.30f, -0.22f, 0.38f};  // top
+        if (i == 1) return new float[]{-0.30f, 0.15f, -0.22f, 0.23f};  // fuel
+        return new float[]{-0.10f, 0.22f, -0.02f, 0.30f};              // result
+    }
+
+    // === updateFurnace: топливо только если есть сырьё ===
+    public boolean updateFurnace() {
+        Inventory.Slot mat = grid[0];
+        Inventory.Slot fuel = grid[1];
+        if (mat.isEmpty() || !isSmeltable(mat)) return false;
+        if (burnTime <= 0) {
+            if (fuel.isEmpty() || !isFuel(fuel)) return false;
+            maxBurnTime = fuelFor(fuel);
+            burnTime = maxBurnTime;
+            fuel.count--; if (fuel.count <= 0) fuel.clear();
+        }
+        burnTime -= 0.05;
+        smeltProgress += 0.02f;
+        if (smeltProgress >= 1f) {
+            smeltProgress = 0;
+            Inventory.Slot res = grid[2];
+            if (res.isEmpty()) { res.item = ItemType.IRON_INGOT; res.count = 1; }
+            else if (res.isItem() && res.item == ItemType.IRON_INGOT && res.count < Inventory.MAX_STACK) res.count++;
+            else return false;
+            mat.count--; if (mat.count <= 0) mat.clear();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isFuel(Inventory.Slot s) {
+        if (s.isBlock() && (s.block == BlockType.WOOD || s.block == BlockType.PLANKS)) return true;
+        if (s.isItem() && s.item == ItemType.COAL) return true;
+        return false;
+    }
+    private float fuelFor(Inventory.Slot s) {
+        if (s.isItem() && s.item == ItemType.COAL) return 8f;
+        if (s.isBlock() && s.block == BlockType.WOOD) return 4f;
+        if (s.isBlock() && s.block == BlockType.PLANKS) return 1.5f;
+        return 0f;
+    }
+    private boolean isSmeltable(Inventory.Slot s) {
+        return s.isItem() && s.item == ItemType.RAW_IRON;
+    }
+
+    public void click(boolean right) {
+        for (int i = 0; i < 3; i++) {
+            float[] r = slotRect(i);
+            if (inside(r)) { clickSlot(grid[i], right); return; }
+        }
+        for (int i = 0; i < Inventory.TOTAL; i++) {
+            float[] r = invSlotRect(i);
+            if (inside(r)) { clickSlot(inventory.slot(i), right); return; }
+        }
+    }
+    private void clickSlot(Inventory.Slot s, boolean right) {
+        if (held == null) {
+            if (s.isEmpty()) return;
+            if (right) {
+                int take = (s.count + 1) / 2;
+                held = s.isBlock() ? new Inventory.Slot(s.block, take) : new Inventory.Slot(s.item, take);
+                s.count -= take; if (s.count <= 0) s.clear();
+            } else { held = s.copy(); s.clear(); }
+        } else {
+            if (right) {
+                if (s.isEmpty()) { if (held.isBlock()) s.block = held.block; else s.item = held.item; s.count = 1; }
+                else if (s.isBlock() && held.isBlock() && s.block == held.block) s.count++;
+                else if (s.isItem() && held.isItem() && s.item == held.item) s.count++;
+                else return;
+                held.count--; if (held.count <= 0) held = null;
+            } else {
+                if (s.isEmpty()) { s.block = held.block; s.item = held.item; s.count = held.count; held = null; }
+                else if (s.isBlock() && held.isBlock() && s.block == held.block) {
+                    int can = Math.min(Inventory.MAX_STACK - s.count, held.count);
+                    s.count += can; held.count -= can; if (held.count <= 0) held = null;
+                } else if (s.isItem() && held.isItem() && s.item == held.item) {
+                    int can = Math.min(Inventory.MAX_STACK - s.count, held.count);
+                    s.count += can; held.count -= can; if (held.count <= 0) held = null;
+                }
+            }
+        }
+    }
+    private boolean inside(float[] r) { return mouseX >= r[0] && mouseX <= r[2] && mouseY >= r[1] && mouseY <= r[3]; }
+
     private void drawQuad(float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, float r, float g, float b, float a) {
         float[] v = { x0,y0,u0,v0,r,g,b,a, x1,y0,u1,v0,r,g,b,a, x1,y1,u1,v1,r,g,b,a, x0,y1,u0,v1,r,g,b,a };
         try (MemoryStack st = MemoryStack.stackPush()) {
@@ -190,11 +179,23 @@ public class FurnaceScreen {
         GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
     }
 
+    private void drawSlotBg(float[] r) {
+        GL20.glUniform1i(shader.uniform("uUseTex"), 0);
+        drawQuad(r[0], r[1], r[2], r[3], 0,0,0,0, 0.2f,0.2f,0.2f,0.9f);
+        drawQuad(r[0], r[1], r[2], r[1]+0.006f, 0,0,0,0, 0.5f,0.5f,0.5f,1);
+        drawQuad(r[0], r[3]-0.006f, r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
+        drawQuad(r[0], r[1], r[0]+0.006f, r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
+        drawQuad(r[2]-0.006f, r[1], r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
+    }
+
     private void drawIcon(Inventory.Slot s, float[] r) {
         if (s == null || s.isEmpty()) return;
         float pad = SLOT * 0.15f;
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         if (s.isBlock()) {
-            int tile = s.block.tileTop; float tu = TextureAtlas.TILE_U;
+            int tile = s.block.tileTop;
+            float tu = TextureAtlas.TILE_U;
             GL20.glUniform1i(shader.uniform("uUseTex"), 1);
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
@@ -206,6 +207,7 @@ public class FurnaceScreen {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, itemAtlasTex);
             drawQuad(r[0]+pad, r[1]+pad, r[2]-pad, r[3]-pad, s.item.id*tu, 1f, (s.item.id+1)*tu, 0f, 1,1,1,1);
         }
+        GL11.glDisable(GL11.GL_BLEND);
     }
 
     public void render() {
@@ -223,29 +225,25 @@ public class FurnaceScreen {
         GL20.glEnableVertexAttribArray(1);
         GL20.glVertexAttribPointer(2, 4, GL11.GL_FLOAT, false, stride, 4L*4L);
         GL20.glEnableVertexAttribArray(2);
-        GL20.glUniform1i(shader.uniform("uUseTex"), 0);
 
-        drawQuad(-1, -1, 1, 1, 0,0,0,0, 0,0,0,0.5f);
-        // слоты печи — тёмные
+        GL20.glUniform1i(shader.uniform("uUseTex"), 0);
+        drawQuad(-1, -1, 1, 1, 0,0,0,0, 0f,0f,0f,0.5f);
+
+        // 3 слота печи
         for (int i = 0; i < 3; i++) {
             float[] r = slotRect(i);
-            drawQuad(r[0], r[1], r[2], r[3], 0,0,0,0, 0.1f,0.1f,0.1f,1f);
-            drawQuad(r[0], r[1], r[2], r[1]+0.006f, 0,0,0,0, 0.5f,0.5f,0.5f,1);
-            drawQuad(r[0], r[3]-0.006f, r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
-            drawQuad(r[0], r[1], r[0]+0.006f, r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
-            drawQuad(r[2]-0.006f, r[1], r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
+            drawSlotBg(r);
             drawIcon(grid[i], r);
         }
-        // инвентарь — светлее
+
+        // 27 + 9 как в InventoryScreen
         for (int i = 0; i < Inventory.TOTAL; i++) {
             float[] r = invSlotRect(i);
-            drawQuad(r[0], r[1], r[2], r[3], 0,0,0,0, 0.22f,0.22f,0.22f,1f);
-            drawQuad(r[0], r[1], r[2], r[1]+0.006f, 0,0,0,0, 0.5f,0.5f,0.5f,1);
-            drawQuad(r[0], r[3]-0.006f, r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
-            drawQuad(r[0], r[1], r[0]+0.006f, r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
-            drawQuad(r[2]-0.006f, r[1], r[2], r[3], 0,0,0,0, 0.5f,0.5f,0.5f,1);
+            drawSlotBg(r);
             drawIcon(inventory.slot(i), r);
         }
+
+        // held
         if (held != null && !held.isEmpty()) {
             float sz = SLOT * 0.7f;
             Inventory.Slot tmp = new Inventory.Slot();
@@ -253,12 +251,13 @@ public class FurnaceScreen {
             float[] r = new float[]{mouseX-sz/2, mouseY-sz/2, mouseX+sz/2, mouseY+sz/2};
             drawIcon(tmp, r);
         }
+
         GL11.glDisable(GL11.GL_BLEND);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL30.glBindVertexArray(0);
+
         // числа
-        for (int i = 0; i < 3; i++) {
-            if (grid[i].isEmpty()) continue;
+        for (int i = 0; i < 3; i++) if (!grid[i].isEmpty()) {
             float[] r = slotRect(i);
             float ch = SLOT * 0.45f;
             String txt = String.valueOf(grid[i].count);
