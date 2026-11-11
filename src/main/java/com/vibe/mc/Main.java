@@ -86,7 +86,7 @@ public class Main {
                     }
                     i++;
                 }
-            w.rebuildAll();
+            // w.rebuildAll() — вызывается в главном потоке (GL), см. enterWorld()
             return new LoadedWorld(w, save);
         } else {
             World w = new World((int)(Math.random() * Integer.MAX_VALUE));
@@ -383,6 +383,8 @@ public class Main {
                     gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
                     applySaveTo(gs, lw.save);
                     lastPosInit = false;
+                    // Перестраиваем ВСЕ меши в главном потоке (GL-контекст есть)
+                    gs.world.rebuildAll();
                     gs.loadingScreenActive = false;
                     GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
                     System.out.println("[Main] play slot " + gs.activeSlot);

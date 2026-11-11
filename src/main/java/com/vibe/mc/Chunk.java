@@ -221,6 +221,11 @@ public class Chunk {
     }
 
     public void buildMesh() {
+        // GL-вызовы только в главном потоке
+        if (org.lwjgl.glfw.GLFW.glfwGetCurrentContext() == 0) {
+            Logger.warn("[Chunk] buildMesh without GL context — skipped (will retry)");
+            return;
+        }
         List<Float> verts = new ArrayList<>();
         List<Integer> inds = new ArrayList<>();
 
