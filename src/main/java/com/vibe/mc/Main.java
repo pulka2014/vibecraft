@@ -95,7 +95,22 @@ public class Main {
     }
 
     private static void applySaveTo(GameState gs, SaveManager.SaveData save) {
-        if (save == null) { int sx = World.SIZE*Chunk.SX/2, sz = World.SIZE*Chunk.SZ/2, sy = Chunk.SY-1; while (sy > 0 && !gs.world.isSolid(sx, sy, sz)) sy--; gs.player.position.set(sx+0.5f, Math.max(sy+1, 30f), sz+0.5f); return; }
+        if (save == null) {
+            // Новый мир: спавн в центре
+            float cx = World.SIZE * Chunk.SX / 2f;
+            float cz = World.SIZE * Chunk.SZ / 2f;
+            float spawnY = 64f;
+            for (int y = Chunk.SY - 1; y >= 0; y--) {
+                if (gs.world.getBlock((int)cx, y, (int)cz) != BlockType.AIR) {
+                    spawnY = y + 2f;
+                    break;
+                }
+            }
+            gs.player.position.set(cx + 0.5f, spawnY, cz + 0.5f);
+            gs.player.yaw = 0f;
+            gs.player.pitch = 0f;
+            return;
+        }
         for (int i = 0; i < Inventory.TOTAL; i++) {
             int bid = save.invSlots[i][0];
             int iid = save.invSlots[i][1];
@@ -106,7 +121,8 @@ public class Main {
             else if (iid >= 0) { s.item = ItemType.byId((byte)iid); s.count = c; }
         }
         gs.player.position.set(save.px, save.py, save.pz);
-        gs.player.yaw = save.yaw; gs.player.pitch = save.pitch;
+        gs.player.yaw = save.yaw;
+        gs.player.pitch = save.pitch;
         gs.time.setT(save.timeOfDay);
     }
 

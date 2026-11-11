@@ -71,7 +71,12 @@ public class LoadingScreen {
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
     }
 
+        private int renderCounter = 0;
     public void render() {
+        renderCounter++;
+        if (renderCounter % 60 == 1 && mapColors != null) {
+            System.out.println("[Loading] rendering map, color[0][0]=" + Integer.toHexString(mapColors[0][0]));
+        }
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
