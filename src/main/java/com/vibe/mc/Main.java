@@ -95,8 +95,9 @@ public class Main {
     }
 
     private static void applySaveTo(GameState gs, SaveManager.SaveData save) {
-        if (save == null) {
-            // Новый мир: спавн в центре
+        // Проверяем, нужно ли спавнить в центре (если save == null или px, pz почти нули)
+        boolean spawnCenter = (save == null) || (Math.abs(save.px) < 4f && Math.abs(save.pz) < 4f);
+        if (spawnCenter) {
             float cx = World.SIZE * Chunk.SX / 2f;
             float cz = World.SIZE * Chunk.SZ / 2f;
             float spawnY = 64f;
@@ -109,8 +110,13 @@ public class Main {
             gs.player.position.set(cx + 0.5f, spawnY, cz + 0.5f);
             gs.player.yaw = 0f;
             gs.player.pitch = 0f;
-            return;
+            System.out.println("[Main] spawn in center: " + gs.player.position);
+        } else {
+            gs.player.position.set(save.px, save.py, save.pz);
+            gs.player.yaw = save.yaw;
+            gs.player.pitch = save.pitch;
         }
+        if (save == null) return;
         for (int i = 0; i < Inventory.TOTAL; i++) {
             int bid = save.invSlots[i][0];
             int iid = save.invSlots[i][1];
@@ -120,9 +126,6 @@ public class Main {
             if (bid >= 0) { s.block = BlockType.byId((byte)bid); s.count = c; }
             else if (iid >= 0) { s.item = ItemType.byId((byte)iid); s.count = c; }
         }
-        gs.player.position.set(save.px, save.py, save.pz);
-        gs.player.yaw = save.yaw;
-        gs.player.pitch = save.pitch;
         gs.time.setT(save.timeOfDay);
     }
 
