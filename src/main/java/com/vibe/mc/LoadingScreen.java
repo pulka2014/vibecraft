@@ -23,7 +23,7 @@ public class LoadingScreen {
 
     private volatile int[][] mapColors = null;
     public static final int MAP_SIZE = 25;
-    private final float[] vertexBuffer = new float[MAP_SIZE * MAP_SIZE * 6 * 6]; // 625 квадов * 6 вершин * 6 float
+    private final float[] vertexBuffer = new float[MAP_SIZE * MAP_SIZE * 6 * 6 + 2000]; // 625 квадов + запас
 
     private static final String VERT = """
         #version 330 core
@@ -61,6 +61,10 @@ public class LoadingScreen {
     }
 
     private int addQuad(int pos, float x0, float y0, float x1, float y1, float r, float g, float b, float a) {
+        if (pos + 36 > vertexBuffer.length) {
+            System.out.println("[Loading] vertexBuffer overflow! pos=" + pos + " max=" + vertexBuffer.length);
+            return pos; // пропускаем, чтобы не упасть
+        }
         // 6 вершин, каждая (x, y, r, g, b, a)
         float[] q = {x0,y0,r,g,b,a, x1,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y1,r,g,b,a};
         System.arraycopy(q, 0, vertexBuffer, pos, 36);
