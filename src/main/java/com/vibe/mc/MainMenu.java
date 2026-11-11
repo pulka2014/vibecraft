@@ -145,10 +145,10 @@ public class MainMenu {
                 // New World — кнопка
                 float[] nw = newWorldButtonRect();
                 if (hover(nw[0], nw[1], nw[2], nw[3])) {
-                    int slot = 1;
+                    int slot = -1;
                     for (int s = 1; s <= Worlds.MAX; s++) if (!Worlds.exists(s)) { slot = s; break; }
+                    if (slot == -1) return; // все слоты заняты
                     selectedSlot = slot;
-                    Worlds.delete(slot); // пустой слот — на всякий
                     pendingAction = "play:" + slot;
                     return;
                 }

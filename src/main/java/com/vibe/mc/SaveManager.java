@@ -99,6 +99,11 @@ public class SaveManager {
             return d;
         } catch (IOException e) {
             System.out.println("[Save] failed: " + e.getMessage());
+            try {
+                java.nio.file.Files.move(p, java.nio.file.Paths.get(p + ".corrupt.bak"),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("[Save] moved corrupt file to .corrupt.bak");
+            } catch (IOException ignored) {}
             return null;
         }
     }
