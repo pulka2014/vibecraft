@@ -100,6 +100,9 @@ public class LoadingScreen {
                     drawQuad(px0, py0, px0 + cell, py0 + cell, r, g, b, 1f);
                 }
             }
+            // ВРЕМЕННЫЙ ТЕСТ: огромный красный квадрат там, где должна быть карта
+            drawQuad(-0.4f, 0.0f, 0.0f, 0.4f, 1f, 0f, 1f, 1f); // розовый
+            System.out.println("[Loading] map loop executed, cell=" + cell + " x0=" + x0 + " y0=" + y0);
             // Яркая рамка вокруг карты
             drawQuad(-0.41f, -0.01f, 0.41f, 0.01f, 1f, 1f, 0f, 1f); // низ
             drawQuad(-0.41f, 0.79f, 0.41f, 0.81f, 1f, 1f, 0f, 1f);   // верх
