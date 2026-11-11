@@ -97,6 +97,7 @@ public class Main {
     private static void applySaveTo(GameState gs, SaveManager.SaveData save) {
         // Проверяем, нужно ли спавнить в центре (если save == null или px, pz почти нули)
         boolean spawnCenter = (save == null) || (Math.abs(save.px) < 4f && Math.abs(save.pz) < 4f);
+        System.out.println("[Main] applySaveTo: save=" + (save != null) + " px=" + (save != null ? save.px : "null") + " pz=" + (save != null ? save.pz : "null") + " spawnCenter=" + spawnCenter);
         if (spawnCenter) {
             float cx = World.SIZE * Chunk.SX / 2f;
             float cz = World.SIZE * Chunk.SZ / 2f;
@@ -180,6 +181,9 @@ public class Main {
         gs.world = World.empty(12345);
         gs.world.drops.setItemAtlas(itemTex);
         gs.player = new Player();
+                    gs.player.position.set(World.SIZE * Chunk.SX / 2f + 0.5f, 70f, World.SIZE * Chunk.SZ / 2f + 0.5f);
+                    gs.player.yaw = 0f;
+                    gs.player.pitch = 0f;
         gs.time = new TimeOfDay();
         gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
         gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
@@ -407,6 +411,9 @@ public class Main {
                     w.drops.setItemAtlas(itemTex);
                     gs.world = w;
                     gs.player = new Player();
+                    gs.player.position.set(World.SIZE * Chunk.SX / 2f + 0.5f, 70f, World.SIZE * Chunk.SZ / 2f + 0.5f);
+                    gs.player.yaw = 0f;
+                    gs.player.pitch = 0f;
                     gs.time = new TimeOfDay();
                     gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
                     gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);

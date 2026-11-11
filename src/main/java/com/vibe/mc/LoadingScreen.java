@@ -5,7 +5,6 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
-
 import java.nio.FloatBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -56,7 +55,6 @@ public class LoadingScreen {
     public synchronized void setChunkColor(int cx, int cz, int rgb) {
         if (mapColors == null) initMap();
         mapColors[cz][cx] = rgb;
-        if (cx == 0 && cz == 0) System.out.println("[Loading] color[0][0]=" + Integer.toHexString(rgb));
     }
 
     private void drawQuad(float x0, float y0, float x1, float y1, float r, float g, float b, float a) {
@@ -69,12 +67,7 @@ public class LoadingScreen {
     }
 
     public void render() {
-        if (mapColors == null) {
-            System.out.println("[Loading] render called, but mapColors is null");
-        } else {
-            System.out.println("[Loading] render called, mapColors[0][0]=" + Integer.toHexString(mapColors[0][0]));
-        }
-
+        // 1) Красный фон (тест)
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -86,11 +79,13 @@ public class LoadingScreen {
         GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
         GL20.glEnableVertexAttribArray(1);
 
-        drawQuad(-1, -1, 1, 1, 0.08f, 0.10f, 0.14f, 1f);
+        // ТЕСТ: красный фон
+        drawQuad(-1, -1, 1, 1, 1f, 0f, 0f, 1f);
 
-        String title = "Loading world...";
-        font.drawString(title, -font.width(title, 0.05f)/2f, 0.7f, 0.05f);
+        // 2) Заголовок
+        font.drawString("Loading world...", -0.3f, 0.7f, 0.05f);
 
+        // 3) Карта 25x25
         if (mapColors != null) {
             float cell = 0.8f / MAP_SIZE;
             float x0 = -0.4f, y0 = 0.0f;
@@ -107,6 +102,7 @@ public class LoadingScreen {
             }
         }
 
+        // 4) Прогресс-бар
         float totalF = Math.max(1, total.get());
         float prog = loaded.get() / totalF;
         drawQuad(-0.4f, -0.7f, 0.4f, -0.65f, 0.2f, 0.2f, 0.2f, 1f);
@@ -114,9 +110,9 @@ public class LoadingScreen {
         String pct = String.format("%.0f%%", prog * 100);
         font.drawString(pct, -font.width(pct, 0.03f)/2f, -0.60f, 0.03f);
 
+        // 5) Статус
         if (finished) {
-            String msg = "Ready! Press ENTER";
-            font.drawString(msg, -font.width(msg, 0.035f)/2f, -0.85f, 0.035f);
+            font.drawString("Ready! Press ENTER", -0.2f, -0.85f, 0.035f);
         }
         if (error) {
             font.drawString("Error: " + errorMsg, -0.9f, -0.85f, 0.03f);
