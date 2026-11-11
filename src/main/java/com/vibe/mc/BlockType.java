@@ -45,7 +45,8 @@ public enum BlockType {
     public int minTier() {
         return switch (this) {
             case STONE, COAL_ORE -> 0;
-            case IRON_ORE, COBBLESTONE, FURNACE -> 1;
+            case IRON_ORE, COBBLESTONE -> 1;
+            case FURNACE -> 0;
             case DIAMOND_ORE -> 2;
             default -> -1;
         };
