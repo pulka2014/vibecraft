@@ -300,8 +300,6 @@ public class Chunk {
                         float tint = 0f;
                         if (f == 0 && b == BlockType.GRASS) tint = 1f;
                         else if (b == BlockType.LEAVES) tint = 2f;
-                        if (f == 0 && b == BlockType.GRASS) tint = 1f;
-                        else if (b == BlockType.LEAVES) tint = 2f;
 
                         for (int i = 0; i < 4; i++) {
                             verts.add(x + fv[i][0]);
