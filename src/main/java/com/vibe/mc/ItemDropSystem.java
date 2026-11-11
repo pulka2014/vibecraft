@@ -21,8 +21,8 @@ public class ItemDropSystem {
     private final List<DroppedItem> items = new ArrayList<>();
     private final Random rng = new Random();
     private int vao = 0, vbo = 0;
-    private Shader shader;
-    private int uProj, uView, uModel, uTex, uUseAtlas;
+    private Shader shader = null;
+    private int uProj = -1, uView = -1, uModel = -1, uTex = -1, uUseAtlas = -1;
 
     private static final String VERT = """
         #version 330 core
@@ -40,7 +40,7 @@ public class ItemDropSystem {
         out vec4 FragColor;
         void main() {
             vec4 c = texture(uTex, vUV);
-            if (uUseAtlas == 1) c.rgb *= vec3(0.35, 0.85, 0.30); // травяной дроп
+            if (uUseAtlas == 1) c.rgb *= vec3(0.35, 0.85, 0.30);
             FragColor = c;
         }
         """;
@@ -48,15 +48,16 @@ public class ItemDropSystem {
     private void ensureInit() {
         if (shader != null) return;
         shader = new Shader(VERT, FRAG);
+        uProj = shader.uniform("uProj");
+        uView = shader.uniform("uView");
+        uModel = shader.uniform("uModel");
+        uTex = shader.uniform("uTex");
+        uUseAtlas = shader.uniform("uUseAtlas");
         vao = GL30.glGenVertexArrays();
         vbo = GL15.glGenBuffers();
     }
 
-    public ItemDropSystem() {
-        shader = new Shader(VERT, FRAG);
-        vao = GL30.glGenVertexArrays();
-        vbo = GL15.glGenBuffers();
-    }
+    public ItemDropSystem() { /* пустой конструктор — GL только в ensureInit */ }
 
     public void spawnItem(int bx, int by, int bz, ItemType item) {
         Vector3f p = new Vector3f(bx + 0.5f, by + 0.5f, bz + 0.5f);
@@ -98,16 +99,13 @@ public class ItemDropSystem {
         }
     }
 
-    /** Записывает куб блока или квад иконки предмета с UV, вписанным в нужный тайл. */
     private void drawBlockCube(BlockType type, float size) {
         int tile = type.tileSide;
         float tu = TextureAtlas.TILE_U;
         float u0 = tile * tu, u1 = u0 + tu;
         float s = size * 0.5f;
 
-        // 6 граней * 4 вершины * (3 pos + 2 uv) = 6*4*5 = 120 float
         float[] v = new float[6 * 4 * 5];
-        // Порядок: +X, -X, +Y, -Y, +Z, -Z. Каждая грань — 4 вершины по 3 координаты.
         int k = 0;
         float[][][] faces = {
             {{s,-s, s},{s,-s,-s},{s, s,-s},{s, s, s}},     // +X
