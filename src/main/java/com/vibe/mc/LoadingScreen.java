@@ -5,7 +5,10 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
+
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class LoadingScreen {
@@ -57,49 +60,30 @@ public class LoadingScreen {
         mapColors[cz][cx] = rgb;
     }
 
-    private void drawQuad(float x0, float y0, float x1, float y1, float r, float g, float b, float a) {
-        float[] v = { x0,y0,r,g,b,a, x1,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y0,r,g,b,a, x1,y1,r,g,b,a, x0,y1,r,g,b,a };
-        try (MemoryStack st = MemoryStack.stackPush()) {
-            FloatBuffer fb = st.mallocFloat(v.length); fb.put(v).flip();
-            
-            // Принудительно привязываем VAO и VBO каждый раз
-            GL30.glBindVertexArray(vao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
-            
-            // Настраиваем атрибуты
-            GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 6*4, 0L);
-            GL20.glEnableVertexAttribArray(0);
-            GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
-            GL20.glEnableVertexAttribArray(1);
-            
-            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
-        }
+    private void addQuad(List<Float> v, float x0, float y0, float x1, float y1, float r, float g, float b, float a) {
+        v.add(x0); v.add(y0); v.add(r); v.add(g); v.add(b); v.add(a);
+        v.add(x1); v.add(y0); v.add(r); v.add(g); v.add(b); v.add(a);
+        v.add(x1); v.add(y1); v.add(r); v.add(g); v.add(b); v.add(a);
+        v.add(x0); v.add(y0); v.add(r); v.add(g); v.add(b); v.add(a);
+        v.add(x1); v.add(y1); v.add(r); v.add(g); v.add(b); v.add(a);
+        v.add(x0); v.add(y1); v.add(r); v.add(g); v.add(b); v.add(a);
     }
 
     public void render() {
-        // 1) Красный фон (тест)
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         shader.bind();
-        GL30.glBindVertexArray(vao);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 6*4, 0L);
-        GL20.glEnableVertexAttribArray(0);
-        GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
-        GL20.glEnableVertexAttribArray(1);
 
-        // Фон
-        drawQuad(-1, -1, 1, 1, 0.08f, 0.10f, 0.14f, 1f);
+        List<Float> verts = new ArrayList<>();
 
-        // 2) Заголовок
-        font.drawString("Loading world...", -0.3f, 0.7f, 0.05f);
+        // 1) Фон
+        addQuad(verts, -1, -1, 1, 1, 0.08f, 0.10f, 0.14f, 1f);
 
-        // 3) Карта 25x25
+        // 2) Карта 25x25 (занимает почти весь экран)
         if (mapColors != null) {
-            float cell = 0.8f / MAP_SIZE;
-            float x0 = -0.4f, y0 = 0.0f;
+            float cell = 1.8f / MAP_SIZE; // почти весь экран
+            float x0 = -0.9f, y0 = -0.9f;
             for (int cz = 0; cz < MAP_SIZE; cz++) {
                 for (int cx = 0; cx < MAP_SIZE; cx++) {
                     int c = mapColors[cz][cx];
@@ -108,35 +92,45 @@ public class LoadingScreen {
                     else { r = ((c >> 16) & 0xFF)/255f; g = ((c >> 8) & 0xFF)/255f; b = (c & 0xFF)/255f; }
                     float px0 = x0 + cx * cell;
                     float py0 = y0 + (MAP_SIZE - 1 - cz) * cell;
-                    drawQuad(px0, py0, px0 + cell, py0 + cell, r, g, b, 1f);
+                    addQuad(verts, px0, py0, px0 + cell, py0 + cell, r, g, b, 1f);
                 }
             }
-            System.out.println("[Loading] map loop executed, cell=" + cell + " x0=" + x0 + " y0=" + y0);
-            // Яркая рамка вокруг карты
-            drawQuad(-0.41f, -0.01f, 0.41f, 0.01f, 1f, 1f, 0f, 1f); // низ
-            drawQuad(-0.41f, 0.79f, 0.41f, 0.81f, 1f, 1f, 0f, 1f);   // верх
-            drawQuad(-0.41f, -0.01f, -0.39f, 0.81f, 1f, 1f, 0f, 1f); // лево
-            drawQuad(0.39f, -0.01f, 0.41f, 0.81f, 1f, 1f, 0f, 1f);   // право
         }
 
-        // 4) Прогресс-бар
+        // 3) Прогресс-бар
         float totalF = Math.max(1, total.get());
         float prog = loaded.get() / totalF;
-        drawQuad(-0.4f, -0.7f, 0.4f, -0.65f, 0.2f, 0.2f, 0.2f, 1f);
-        drawQuad(-0.4f, -0.7f, -0.4f + 0.8f * prog, -0.65f, 0.2f, 0.8f, 0.2f, 1f);
-        String pct = String.format("%.0f%%", prog * 100);
-        font.drawString(pct, -font.width(pct, 0.03f)/2f, -0.60f, 0.03f);
+        addQuad(verts, -0.5f, -0.98f, 0.5f, -0.95f, 0.2f, 0.2f, 0.2f, 1f);
+        addQuad(verts, -0.5f, -0.98f, -0.5f + 1.0f * prog, -0.95f, 0.2f, 0.8f, 0.2f, 1f);
 
-        // 5) Статус
-        if (finished) {
-            font.drawString("Ready! Press ENTER", -0.2f, -0.85f, 0.035f);
+        // Отрисовка одним вызовом
+        if (!verts.isEmpty()) {
+            float[] v = new float[verts.size()];
+            for (int i = 0; i < verts.size(); i++) v[i] = verts.get(i);
+
+            GL30.glBindVertexArray(vao);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+            try (MemoryStack st = MemoryStack.stackPush()) {
+                FloatBuffer fb = st.mallocFloat(v.length);
+                fb.put(v).flip();
+                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
+            }
+            GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 6*4, 0L);
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 6*4, 2L*4L);
+            GL20.glEnableVertexAttribArray(1);
+
+            GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, v.length / 6);
+            GL30.glBindVertexArray(0);
         }
-        if (error) {
-            font.drawString("Error: " + errorMsg, -0.9f, -0.85f, 0.03f);
-        }
+
+        // 4) Текст (отдельно, через FontRenderer)
+        font.drawString("Loading world...", -0.2f, 0.95f, 0.04f);
+        String pct = String.format("%.0f%%", prog * 100);
+        font.drawString(pct, -0.1f, -0.92f, 0.03f);
+        if (finished) font.drawString("Ready! Press ENTER", -0.2f, -0.88f, 0.035f);
 
         GL11.glDisable(GL11.GL_BLEND);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL30.glBindVertexArray(0);
     }
 }
