@@ -17,7 +17,15 @@ public class Worlds {
         try { return exists(slot) ? Files.size(file(slot)) : 0L; } catch (IOException e) { return 0L; }
     }
     public static void delete(int slot) {
-        try { Files.deleteIfExists(file(slot)); } catch (IOException ignored) {}
+        try {
+            Path dir = dir(slot);
+            if (Files.exists(dir)) {
+                try (java.util.stream.Stream<Path> walk = Files.walk(dir)) {
+                    walk.sorted(java.util.Comparator.reverseOrder())
+                        .forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ignored) {} });
+                }
+            }
+        } catch (IOException ignored) {}
     }
     public static String label(int slot) {
         if (slot < 1 || slot > MAX) return "?";

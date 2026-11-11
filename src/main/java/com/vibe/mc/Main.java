@@ -93,7 +93,7 @@ public class Main {
     }
 
     private static void applySaveTo(GameState gs, SaveManager.SaveData save) {
-        if (save == null) { gs.player.position.set(40f, 40f, 40f); return; }
+        if (save == null) { int sx = World.SIZE*Chunk.SX/2, sz = World.SIZE*Chunk.SZ/2, sy = Chunk.SY-1; while (sy > 0 && !gs.world.isSolid(sx, sy, sz)) sy--; gs.player.position.set(sx+0.5f, sy+1, sz+0.5f); return; }
         for (int i = 0; i < Inventory.TOTAL; i++) {
             int bid = save.invSlots[i][0];
             int iid = save.invSlots[i][1];

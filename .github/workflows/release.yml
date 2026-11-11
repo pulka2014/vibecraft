@@ -14,13 +14,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: chmod gradlew
-        run: chmod +x gradlew
-      - name: Build jar
-        run: ./gradlew clean jar
+      - name: Build fat jar
+        run: |
+          chmod +x gradlew
+          ./gradlew clean shadowJar
       - name: Find jar
         run: |
           ls -la build/libs/
+          cp build/libs/vibecraft.jar vibecraft.jar 2>/dev/null || \
           cp "$(ls build/libs/*.jar | grep -v plain | head -1)" vibecraft.jar
       - name: Create release + upload
         uses: softprops/action-gh-release@v2

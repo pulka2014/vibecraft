@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class World {
-    public static final int SIZE = 5;
+    public static final int SIZE = 25;
     public final Map<ChunkPos, Chunk> chunks = new HashMap<>();
     public final ParticleSystem particles = new ParticleSystem();
     public final ItemDropSystem drops = new ItemDropSystem();

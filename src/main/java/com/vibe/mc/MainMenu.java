@@ -95,6 +95,9 @@ public class MainMenu {
         float y0 = 0.30f - row*(h+gap);
         return new float[]{x0, y0, x0+w, y0+h};
     }
+    private float[] deleteWorldRect() {
+        return new float[]{ -0.16f, -0.40f, 0.16f, -0.32f };
+    }
     private float[] newWorldRect() {
         return new float[]{ -0.16f, -0.30f, 0.16f, -0.22f };
     }
@@ -133,6 +136,13 @@ public class MainMenu {
                     for (int s = 1; s <= Worlds.MAX; s++) if (!Worlds.exists(s)) { slot = s; break; }
                     if (slot < 0) return;
                     pendingAction = "play:" + slot;
+                    return;
+                }
+                float[] del = deleteWorldRect();
+                if (hover(del[0], del[1], del[2], del[3])) {
+                    if (selectedSlot >= 1 && Worlds.exists(selectedSlot)) {
+                        confirmDeleteSlot = selectedSlot;
+                    }
                     return;
                 }
                 float[] back = backRect();
@@ -275,6 +285,8 @@ public class MainMenu {
         }
         float[] nw = newWorldRect();
         drawButtonRect(nw[0], nw[1], nw[2], nw[3], hover(nw[0], nw[1], nw[2], nw[3]));
+        float[] del = deleteWorldRect();
+        drawButtonRect(del[0], del[1], del[2], del[3], hover(del[0], del[1], del[2], del[3]));
         float[] back = backRect();
         drawButtonRect(back[0], back[1], back[2], back[3], hover(back[0], back[1], back[2], back[3]));
 
@@ -301,6 +313,8 @@ public class MainMenu {
         float[] nw = newWorldRect();
         float nwH = 0.032f;
         font.drawString("New World", (nw[0]+nw[2])/2f - font.width("New World", nwH)/2f, (nw[1]+nw[3])/2f + nwH/2f, nwH);
+        float[] del = deleteWorldRect();
+        font.drawString("Delete", (del[0]+del[2])/2f - font.width("Delete", nwH)/2f, (del[1]+del[3])/2f + nwH/2f, nwH);
         float[] back = backRect();
         float ch = 0.035f;
         font.drawString("Back", (back[0]+back[2])/2f - font.width("Back", ch)/2f, (back[1]+back[3])/2f + ch/2f, ch);
