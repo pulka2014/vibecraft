@@ -83,15 +83,30 @@ public class LoadingScreen {
 
         // Карта (если есть)
         if (mapColors != null) {
-            float cell = 1.8f / MAP_SIZE;
-            float x0 = -0.9f, y0 = -0.9f;
+            // Карта должна быть КВАДРАТНОЙ на экране, несмотря на пропорции 16:9
+            // NDC: X от -1 до 1 (ширина), Y от -1 до 1 (высота)
+            // 1 единица по Y на экране = 1 единица по X * (16/9)
+            float aspect = 16.0f / 9.0f;
+            float mapSizeY = 0.8f;             // размер карты по вертикали
+            float mapSizeX = mapSizeY / aspect; // размер по горизонтали
+            float cellY = mapSizeY / MAP_SIZE;
+            float cellX = mapSizeX / MAP_SIZE;
+            
+            // Центрируем карту ровно посередине
+            float startX = -mapSizeX / 2f;
+            float startY = -mapSizeY / 2f + 0.1f; // чуть выше, чтобы не перекрывалось с прогрессом
+            
             for (int cz = 0; cz < MAP_SIZE; cz++) {
                 for (int cx = 0; cx < MAP_SIZE; cx++) {
                     int c = mapColors[cz][cx];
                     float r, g, b;
                     if (c == -1) { r = 0.18f; g = 0.18f; b = 0.22f; }
                     else { r = ((c >> 16) & 0xFF)/255f; g = ((c >> 8) & 0xFF)/255f; b = (c & 0xFF)/255f; }
-                    pos = addQuad(pos, x0 + cx * cell, y0 + (MAP_SIZE - 1 - cz) * cell, x0 + (cx+1)*cell, y0 + (MAP_SIZE - cz)*cell, r, g, b, 1f);
+                    
+                    float px0 = startX + cx * cellX;
+                    float py0 = startY + (MAP_SIZE - 1 - cz) * cellY;
+                    
+                    pos = addQuad(pos, px0, py0, px0 + cellX, py0 + cellY, r, g, b, 1f);
                 }
             }
         }
