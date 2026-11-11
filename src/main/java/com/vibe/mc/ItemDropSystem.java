@@ -193,7 +193,7 @@ public class ItemDropSystem {
             } else {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
-                boolean tint = (it.type == BlockType.GRASS || it.type == BlockType.LEAVES);
+                boolean tint = false; // текстуры уже цветные (grass_block_side), tint не нужен
                 GL20.glUniform1i(uUseAtlas, tint ? 1 : 0);
                 drawBlockCube(it.type, 0.25f);
             }
