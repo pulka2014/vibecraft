@@ -271,8 +271,7 @@ public class Chunk {
                         int tile;
                         if (b == BlockType.FURNACE) {
                             int rot = getRotation(x, y, z);
-                            // front-грань у нас face == 2 (dir +Z). Логика:
-                            // rot 0 = front на +Z, 1 = +X, 2 = -Z, 3 = -X.
+                            // rot 0 = front на +Z, 1 = +X, 2 = -Z, 3 = -X
                             int frontFace = switch (rot) {
                                 case 0 -> 2;   // +Z
                                 case 1 -> 4;   // +X
@@ -280,8 +279,8 @@ public class Chunk {
                                 default -> 5;  // -X
                             };
                             if (f == frontFace) tile = b.tileFront;
-                            else if (f == 0) tile = b.tileTop;      // верх
-                            else if (f == 1) tile = b.tileTop;      // низ тоже top (в MC низ печи = top)
+                            else if (f == 0) tile = b.tileTop;
+                            else if (f == 1) tile = b.tileTop;
                             else tile = b.tileSide;
                         } else {
                             tile = b.tileFor(f);

@@ -87,7 +87,7 @@ public class Main {
             w.rebuildAll();
             return new LoadedWorld(w, save);
         } else {
-            World w = new World(12345);
+            World w = new World((int)(Math.random() * Integer.MAX_VALUE));
             w.inventory.addBlock(BlockType.PLANKS, 64);
             w.inventory.addBlock(BlockType.CRAFTING_TABLE, 1);
             w.inventory.addItem(ItemType.WOODEN_PICKAXE, 1);
