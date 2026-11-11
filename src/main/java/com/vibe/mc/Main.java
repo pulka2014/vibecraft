@@ -371,8 +371,20 @@ public class Main {
                 GLFW.glfwPollEvents();
                 // Enter — применить мир и зайти в игру
                 if (gs.loadingScreen.finished && GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ENTER) == GLFW.GLFW_PRESS) {
-                    LoadedWorld lw = loadOrCreateWorld(gs.activeSlot);
-                    World w = lw.world;
+                    // Берём мир, который уже загружен в фоновом потоке (без повторного чтения файла)
+                    World w = gs.loadingScreen.world;
+                    if (w == null) {
+                        // fallback (если фон не успел)
+                        LoadedWorld lw = loadOrCreateWorld(gs.activeSlot);
+                        w = lw.world;
+                        applySaveTo(gs, lw.save);
+                    } else {
+                        // данные игрока/инвентаря уже есть в world (применялись в фоне? нет — нужно применить save)
+                        // Но save у нас в LoadedWorld, который остался в фоне.
+                        // Придётся применить save здесь, но без повторного чтения chunks:
+                        SaveManager.SaveData save = SaveManager.load();
+                        applySaveTo(gs, save);
+                    }
                     w.drops.setItemAtlas(itemTex);
                     gs.world = w;
                     gs.player = new Player();
@@ -381,7 +393,6 @@ public class Main {
                     gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
                     gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
                     gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
-                    applySaveTo(gs, lw.save);
                     lastPosInit = false;
                     // Перестраиваем ВСЕ меши в главном потоке (GL-контекст есть)
                     gs.world.rebuildAll();
@@ -452,7 +463,7 @@ public class Main {
                                         gs.loadingScreen.setChunkColor(cx, cz, color);
                                         loadedChunks++;
                                         gs.loadingScreen.loaded.set(loadedChunks);
-                                        Thread.sleep(8); // визуальная задержка
+                                        try { Thread.sleep(2); } catch (InterruptedException ignored) {}
                                     }
                                 }
                                 w.drops.setItemAtlas(itemTex);

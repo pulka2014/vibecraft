@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /** Loading screen: 25x25 chunk map + progress bar (English text, ASCII font). */
 public class LoadingScreen {
+    private boolean loggedRender = false;
     private final Shader shader;
     private final FontRenderer font;
     private int vao, vbo;
@@ -58,6 +59,7 @@ public class LoadingScreen {
     public synchronized void setChunkColor(int cx, int cz, int rgb) {
         if (mapColors == null) initMap();
         mapColors[cz][cx] = rgb;
+        if (cx == 0 && cz == 0) System.out.println("[Loading] chunk(0,0) color=" + Integer.toHexString(rgb));
     }
 
     private void drawQuad(float x0, float y0, float x1, float y1, float r, float g, float b, float a) {
@@ -90,6 +92,7 @@ public class LoadingScreen {
 
         // Карта 25x25 (квадрат 0.8x0.8 в центре)
         if (mapColors != null) {
+            if (!loggedRender) { loggedRender = true; System.out.println("[Loading] render mapColors is NOT null (" + MAP_SIZE + "x" + MAP_SIZE + ")"); }
             float cell = 0.8f / MAP_SIZE;
             float x0 = -0.4f, y0 = 0.0f;
             for (int cz = 0; cz < MAP_SIZE; cz++) {
