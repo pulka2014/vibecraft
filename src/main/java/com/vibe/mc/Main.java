@@ -24,6 +24,8 @@ public class Main {
         InventoryScreen invScreen;
         CraftingScreen craftScreen;
         FurnaceScreen furnaceScreen;
+        LoadingScreen loadingScreen;
+        boolean loadingScreenActive = false;
         Integer activeSlot = null;
     }
 
@@ -93,7 +95,7 @@ public class Main {
     }
 
     private static void applySaveTo(GameState gs, SaveManager.SaveData save) {
-        if (save == null) { int sx = World.SIZE*Chunk.SX/2, sz = World.SIZE*Chunk.SZ/2, sy = Chunk.SY-1; while (sy > 0 && !gs.world.isSolid(sx, sy, sz)) sy--; gs.player.position.set(sx+0.5f, sy+1, sz+0.5f); return; }
+        if (save == null) { int sx = World.SIZE*Chunk.SX/2, sz = World.SIZE*Chunk.SZ/2, sy = Chunk.SY-1; while (sy > 0 && !gs.world.isSolid(sx, sy, sz)) sy--; gs.player.position.set(sx+0.5f, Math.max(sy+1, 30f), sz+0.5f); return; }
         for (int i = 0; i < Inventory.TOTAL; i++) {
             int bid = save.invSlots[i][0];
             int iid = save.invSlots[i][1];
@@ -164,6 +166,7 @@ public class Main {
         gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
         gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
         gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
+        gs.loadingScreen = new LoadingScreen(font);
 
         final long win = window;
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
@@ -356,6 +359,39 @@ public class Main {
             float dt = (float)(now - lastTime);
             lastTime = now;
 
+            // ---- экран загрузки ----
+            if (gs.loadingScreenActive) {
+                GL11.glClearColor(0.05f, 0.05f, 0.07f, 1f);
+                GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+                gs.loadingScreen.render();
+                GLFW.glfwSwapBuffers(window);
+                GLFW.glfwPollEvents();
+                // Enter — применить мир и зайти в игру
+                if (gs.loadingScreen.finished && GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ENTER) == GLFW.GLFW_PRESS) {
+                    LoadedWorld lw = loadOrCreateWorld(gs.activeSlot);
+                    World w = lw.world;
+                    w.drops.setItemAtlas(itemTex);
+                    gs.world = w;
+                    gs.player = new Player();
+                    gs.time = new TimeOfDay();
+                    gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
+                    gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
+                    gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
+                    gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
+                    applySaveTo(gs, lw.save);
+                    lastPosInit = false;
+                    gs.loadingScreenActive = false;
+                    GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+                    System.out.println("[Main] play slot " + gs.activeSlot);
+                }
+                if (gs.loadingScreen.error && GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ENTER) == GLFW.GLFW_PRESS) {
+                    gs.loadingScreenActive = false;
+                    mainMenu.setOpen(true);
+                }
+                lastTime = GLFW.glfwGetTime();
+                continue;
+            }
+
             // ---- главное меню ----
             if (mainMenu.isOpen()) {
                 float[] sky = new float[]{0.08f, 0.10f, 0.14f};
@@ -366,22 +402,71 @@ public class Main {
                 if (act != null) {
                     if (act.startsWith("play:")) {
                         int slot = Integer.parseInt(act.substring(5));
-                        LoadedWorld lw = loadOrCreateWorld(slot);
-                        World w = lw.world;
-                        w.drops.setItemAtlas(itemTex);
-                        gs.world = w;
-                        gs.player = new Player();
-                        gs.time = new TimeOfDay();
-                        gs.hotbar = new Hotbar(tex, itemTex, gs.world.inventory, font);
-                        gs.invScreen = new InventoryScreen(tex, itemTex, gs.world.inventory, font);
-                        gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
-                        gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
                         gs.activeSlot = slot;
-                        applySaveTo(gs, lw.save);
-                        lastPosInit = false;
+                        final int slotFinal = slot;
+
+                        // Создаём LoadingScreen и запускаем загрузку в фоне
+                        gs.loadingScreen = new LoadingScreen(font);
+                        gs.loadingScreen.total.set(World.SIZE * World.SIZE);
+                        gs.loadingScreen.loaded.set(0);
+                        gs.loadingScreen.finished = false;
+                        gs.loadingScreen.error = false;
+                        gs.loadingScreen.errorMsg = "";
                         mainMenu.setOpen(false);
-                        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
-                        System.out.println("[Main] play slot " + slot);
+                        GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+                        gs.loadingScreenActive = true;
+
+                        Thread t = new Thread(() -> {
+                            try {
+                                LoadedWorld lw = loadOrCreateWorld(slotFinal);
+                                World w = lw.world;
+
+                                // Строим карту мира (80x80) сверху
+                                int N = World.SIZE * Chunk.SX;
+                                int[][] colors = new int[N][N];
+                                int loadedChunks = 0;
+                                for (int cx = 0; cx < World.SIZE; cx++) {
+                                    for (int cz = 0; cz < World.SIZE; cz++) {
+                                        Chunk c = w.chunks.get(new ChunkPos(cx, cz));
+                                        if (c != null) {
+                                            for (int x = 0; x < Chunk.SX; x++) {
+                                                for (int z = 0; z < Chunk.SZ; z++) {
+                                                    int top = 0;
+                                                    for (int y = Chunk.SY - 1; y >= 0; y--) {
+                                                        if (c.get(x, y, z) != BlockType.AIR) { top = y; break; }
+                                                    }
+                                                    BlockType b = (top == 0) ? BlockType.AIR : c.get(x, top, z);
+                                                    int color;
+                                                    switch (b) {
+                                                        case GRASS, LEAVES -> color = 0x4CAF50; // зелёный
+                                                        case DIRT, WOOD, PLANKS -> color = 0x8B5A2B; // коричневый
+                                                        case STONE, COBBLESTONE -> color = 0x888888; // серый
+                                                        case COAL_ORE, IRON_ORE, DIAMOND_ORE, FURNACE -> color = 0x555555;
+                                                        case SAND -> color = 0xDCD6A0;
+                                                        case CRAFTING_TABLE -> color = 0xA0522D;
+                                                        default -> color = 0x000000;
+                                                    }
+                                                    colors[cz * Chunk.SZ + z][cx * Chunk.SX + x] = color;
+                                                }
+                                            }
+                                        }
+                                        loadedChunks++;
+                                        gs.loadingScreen.loaded.set(loadedChunks);
+                                        gs.loadingScreen.setMap(colors);
+                                        Thread.sleep(5); // чтобы UI успевал отрисоваться
+                                    }
+                                }
+                                w.drops.setItemAtlas(itemTex);
+                                gs.loadingScreen.world = w;
+                                gs.loadingScreen.finished = true;
+                            } catch (Exception ex) {
+                                gs.loadingScreen.error = true;
+                                gs.loadingScreen.errorMsg = ex.getMessage();
+                                ex.printStackTrace();
+                            }
+                        }, "WorldLoader");
+                        t.setDaemon(true);
+                        t.start();
                     } else if (act.startsWith("delete:")) {
                         int slot = Integer.parseInt(act.substring(7));
                         Worlds.delete(slot);

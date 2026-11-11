@@ -11,7 +11,7 @@ public class SaveManager {
         return (currentSlot == null) ? java.nio.file.Paths.get("world.dat") : Worlds.file(currentSlot);
     }
     private static final int MAGIC = 0x56494245; // "VIBE"
-    private static final int VERSION = 5;
+    private static final int VERSION = 6;
 
     public static class SaveData {
         public byte[][] chunks; // 5x5
@@ -47,7 +47,8 @@ public class SaveManager {
         d.timeOfDay = time.getT();
 
         if (currentSlot != null) Worlds.ensureDir(currentSlot);
-        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(path())))) {
+        try (java.util.zip.GZIPOutputStream gz = new java.util.zip.GZIPOutputStream(new BufferedOutputStream(Files.newOutputStream(path())));
+             DataOutputStream out = new DataOutputStream(gz)) {
             out.writeInt(MAGIC);
             out.writeInt(VERSION);
             out.writeInt(World.SIZE);
@@ -68,7 +69,8 @@ public class SaveManager {
     public static SaveData load() {
         Path p = path();
         if (!Files.exists(p)) { System.out.println("[Save] no " + p + ", new world"); return null; }
-        try (DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(p)))) {
+        try (java.util.zip.GZIPInputStream gz = new java.util.zip.GZIPInputStream(new BufferedInputStream(Files.newInputStream(p)));
+             DataInputStream in = new DataInputStream(gz)) {
             if (in.readInt() != MAGIC) { System.out.println("[Save] bad magic"); return null; }
             int ver = in.readInt();
             if (ver != VERSION) { System.out.println("[Save] version mismatch " + ver + " != " + VERSION); return null; }

@@ -71,6 +71,7 @@ public class Player {
         moveAxis(world, velocity.x * dt, 0, 0);
         moveAxis(world, 0, velocity.y * dt, 0);
         moveAxis(world, 0, 0, velocity.z * dt);
+        if (position.y < 0f) { position.y = 0f; velocity.y = 0f; onGround = true; }
 
         // 4) пере-проверка «под ногами есть опора» (включая плиту)
         if (velocity.y <= 0) {
