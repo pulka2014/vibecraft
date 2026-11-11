@@ -173,4 +173,64 @@ public class FontRenderer {
         GL20.glUniform4f(uColor, 1, 1, 1, 1);
         GL11.glEnable(GL11.GL_DEPTH_TEST);
     }
+
+    /** Рисует строку, поворачивая КАЖДЫЙ символ вокруг его центра на angleRad. */
+    public void drawStringColoredRotated(String str, float x, float y, float charH,
+                                         float angleRad, float cr, float cg, float cb, float ca) {
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        shader.bind();
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasTex);
+        GL20.glUniform1i(shader.uniform("uTex"), 0);
+        GL20.glUniform4f(uColor, cr, cg, cb, ca);
+        GL30.glBindVertexArray(vao);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
+        GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 4 * 4, 0L);
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 4 * 4, 2L * 4L);
+        GL20.glEnableVertexAttribArray(1);
+
+        float charW = charH * 0.6f;
+        float cos = (float)Math.cos(angleRad), sin = (float)Math.sin(angleRad);
+        float cx = x;
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+            if (c == '\n') { cx = x; y -= charH * 1.4f; continue; }
+            if (c < 32 || c > 127) c = '?';
+            float u0 = (c % 16) / 16f;
+            float v0 = (c / 16) / 16f;
+            float u1 = u0 + 1f/16f;
+            float v1 = v0 + 1f/16f;
+            // центр символа
+            float mx = cx + charW/2f;
+            float my = y - charH/2f;
+            // 4 угла (dx, dy относительно центра)
+            float[] dxdy = {
+                -charW/2f,  charH/2f,
+                 charW/2f,  charH/2f,
+                 charW/2f, -charH/2f,
+                -charW/2f, -charH/2f
+            };
+            float[] uvs = { u0, v0, u1, v0, u1, v1, u0, v1 };
+            float[] v = new float[16];
+            for (int k = 0; k < 4; k++) {
+                float rx = dxdy[k*2]   * cos - dxdy[k*2+1] * sin;
+                float ry = dxdy[k*2]   * sin + dxdy[k*2+1] * cos;
+                v[k*4 + 0] = mx + rx;
+                v[k*4 + 1] = my + ry;
+                v[k*4 + 2] = uvs[k*2];
+                v[k*4 + 3] = uvs[k*2+1];
+            }
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                FloatBuffer fb = stack.mallocFloat(16);
+                fb.put(v).flip();
+                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
+            }
+            GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
+            cx += charW * 0.9f;
+        }
+        GL30.glBindVertexArray(0);
+        GL20.glUniform4f(uColor, 1, 1, 1, 1);
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+    }
 }

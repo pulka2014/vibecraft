@@ -248,9 +248,17 @@ public class MainMenu {
         float th = 0.13f, tw = font.width(title, th);
         font.drawStringColored(title, -tw/2f + 0.004f, 0.62f - 0.004f, th, 0.25f, 0.20f, 0.0f, 1f);
         font.drawStringColored(title, -tw/2f, 0.62f, th, 1f, 1f, 0.2f, 1f);
-        float sh = 0.026f;
-        font.drawStringColored(splash, tw/2f - 0.02f + 0.0015f, 0.55f - 0.0015f, sh, 0f, 0f, 0f, 1f);
-        font.drawStringColored(splash, tw/2f - 0.02f, 0.55f, sh, 1f, 1f, 0.2f, 1f);
+        // splash: наклон 45° + пульсация ±10%
+        long ns = System.nanoTime();
+        float pulse = 1.0f + 0.10f * (float)Math.sin(ns / 300_000_000.0); // ±10% каждые ~2 сек
+        float sh = 0.026f * pulse;
+        float angle = (float)Math.toRadians(45);
+        float sx = tw/2f - 0.02f;
+        float sy = 0.55f;
+        // тень (наклонённая)
+        font.drawStringColoredRotated(splash, sx + 0.0015f, sy - 0.0015f, sh, angle, 0f, 0f, 0f, 1f);
+        // жёлтый
+        font.drawStringColoredRotated(splash, sx, sy, sh, angle, 1f, 1f, 0.2f, 1f);
         float cx = 0f, h = 0.08f, gap = 0.02f, y = 0.05f;
         for (String lb : new String[]{"Singleplayer", "Settings", "Debug", "Quit"}) {
             float ch = 0.035f;
