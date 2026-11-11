@@ -208,8 +208,8 @@ public class World {
         if (pMaxX > x && pMinX < x + 1 && pMaxY > y && pMinY < y + 1 && pMaxZ > z && pMinZ < z + 1) return;
         setBlock(x, y, z, type);
         if (type == BlockType.FURNACE) {
-            // face (front) должен смотреть на игрока, т.е. -нормаль
-            int fx = -nx, fz = -nz;
+            // raycast возвращает нормаль "от блока к игроку" => front смотрит по нормали
+            int fx = nx, fz = nz;
             int rot;
             if (fx > 0) rot = 1;       // front на +X
             else if (fx < 0) rot = 3;  // front на -X
