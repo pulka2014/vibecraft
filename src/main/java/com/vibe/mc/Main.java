@@ -502,6 +502,10 @@ public class Main {
                                             else if (max == ore) color = 0x444444;    // тёмно-серый
                                             else if (max == sand) color = 0xDCD6A0;   // песочный
                                             else color = 0x555555;
+                                            
+                                            if (cx == 0 && cz == 0) {
+                                                System.out.println("[Map] chunk(0,0): grass=" + grass + " dirt=" + dirt + " stone=" + stone + " ore=" + ore + " wood=" + wood + " leaves=" + leaves + " sand=" + sand + " other=" + other + " -> color=0x" + Integer.toHexString(color));
+                                            }
                                         }
                                         gs.loadingScreen.setChunkColor(cx, cz, color);
                                         loadedChunks++;
