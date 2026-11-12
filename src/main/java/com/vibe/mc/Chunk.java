@@ -150,6 +150,47 @@ public class Chunk {
             }
         }
 
+        // КРАТЕРЫ С ВОДОЙ (озёра)
+        java.util.Random lakeRng = new java.util.Random(seed * 55L);
+        int numLakes = 2 + lakeRng.nextInt(3); // 2-4 озера на чанк
+        for (int l = 0; l < numLakes; l++) {
+            int cx = 4 + lakeRng.nextInt(SX - 8);
+            int cz = 4 + lakeRng.nextInt(SZ - 8);
+            int h = height[cx][cz];
+            if (h < 6) continue; // слишком глубоко — не делаем
+            int radius = 3 + lakeRng.nextInt(3); // 3-5 блоков
+            int waterLevel = h - 1;
+
+            // Выкапываем кратер (сфера)
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    for (int dy = -2; dy <= 3; dy++) {
+                        int dist = dx*dx + dz*dz + dy*dy;
+                        if (dist <= radius*radius) {
+                            int x = cx + dx, z = cz + dz, y = h + dy;
+                            if (inBounds(x, y, z)) {
+                                if (y <= waterLevel) set(x, y, z, BlockType.WATER);
+                                else set(x, y, z, BlockType.AIR);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Песок по краям кратера
+            for (int dx = -radius-1; dx <= radius+1; dx++) {
+                for (int dz = -radius-1; dz <= radius+1; dz++) {
+                    int dist = dx*dx + dz*dz;
+                    if (dist > radius*radius && dist <= (radius+1)*(radius+1)) {
+                        int x = cx + dx, z = cz + dz;
+                        if (inBounds(x, waterLevel + 1, z)) {
+                            set(x, waterLevel + 1, z, BlockType.SAND);
+                        }
+                    }
+                }
+            }
+        }
+
         // деревья
         java.util.Random rng = new java.util.Random(seed * 31L + offsetX * 1000L + offsetZ);
         java.util.List<int[]> trees = new java.util.ArrayList<>();

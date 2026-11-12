@@ -97,12 +97,14 @@ public class Player {
         moveAxis(world, 0, velocity.y * dt, 0);
         moveAxis(world, 0, 0, velocity.z * dt);
         
-        if (onGround && fallSpeed < -8f) { // ~4 блока
-            int dmg = (int)(Math.abs(fallSpeed) / 8f); // 1 HP за 4 блока
-            if (dmg < 1) dmg = 1;
+        // Урон от падения: только если падал дольше 0.5 сек (высота > 4 блоков)
+        if (onGround && fallSpeed < -14f) {
+            int dmg = (int)((Math.abs(fallSpeed) - 14f) / 5f) + 1;
             health -= dmg;
             if (health < 0) health = 0;
         }
+        
+        
         if (position.y < 0f) { position.y = 0f; velocity.y = 0f; onGround = true; }
 
         // 4) пере-проверка «под ногами есть опора» (включая плиту)
