@@ -109,16 +109,30 @@ public class Main {
             float cx = World.SIZE * Chunk.SX / 2f;
             float cz = World.SIZE * Chunk.SZ / 2f;
             float spawnY = 64f;
-            for (int y = Chunk.SY - 1; y >= 0; y--) {
-                if (gs.world.getBlock((int)cx, y, (int)cz) != BlockType.AIR) {
-                    spawnY = y + 2f;
-                    break;
+            // Ищем ближайшую землю (не воду), начиная с центра
+            for (int r = 0; r < 20; r++) {
+                boolean found = false;
+                for (int dx = -r; dx <= r && !found; dx++) {
+                    for (int dz = -r; dz <= r && !found; dz++) {
+                        int x = (int)cx + dx;
+                        int z = (int)cz + dz;
+                        for (int y = Chunk.SY - 1; y >= 0; y--) {
+                            BlockType b = gs.world.getBlock(x, y, z);
+                            if (b != BlockType.AIR && b != BlockType.WATER) {
+                                if (b == BlockType.GRASS || b == BlockType.DIRT || b == BlockType.STONE || b == BlockType.SAND) {
+                                    gs.player.position.set(x + 0.5f, y + 2f, z + 0.5f);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
+                if (found) break;
             }
-            gs.player.position.set(cx + 0.5f, spawnY, cz + 0.5f);
             gs.player.yaw = 0f;
             gs.player.pitch = 0f;
-            System.out.println("[Main] spawn in center: " + gs.player.position);
+            System.out.println("[Main] spawn near center: " + gs.player.position);
         } else {
             gs.player.position.set(save.px, save.py, save.pz);
             gs.player.yaw = save.yaw;

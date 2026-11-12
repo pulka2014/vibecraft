@@ -73,17 +73,17 @@ public class Player {
         // 2) гравитация
         // Проверка воды на 3 уровнях (ноги, тело, голова)
         boolean inWater = false;
-        for (float dy : new float[]{0.1f, 0.9f, 1.5f}) {
+        for (float dy : new float[]{0.1f, 0.9f, 1.5f, 2.0f}) {
             if (world.getBlock((int)Math.floor(position.x), (int)Math.floor(position.y + dy), (int)Math.floor(position.z)) == BlockType.WATER) {
                 inWater = true; break;
             }
         }
         if (inWater) {
-            velocity.y *= 0.8f;
-            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) velocity.y = 4f;
-            if (velocity.y < -2f) velocity.y = -2f;
-            velocity.x *= 0.8f;
-            velocity.z *= 0.8f;
+            velocity.y *= 0.9f;
+            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) velocity.y = 5f;
+            if (velocity.y < -3f) velocity.y = -3f;
+            velocity.x *= 0.9f;
+            velocity.z *= 0.9f;
         } else {
             velocity.y += GRAVITY * dt;
         }
