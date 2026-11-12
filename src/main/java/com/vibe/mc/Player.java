@@ -41,6 +41,7 @@ public class Player {
     public void update(long window, World world, float dt) {
         float fallSpeed = velocity.y; // сохраняем скорость падения
  // сохраняем скорость падения
+ // сохраняем скорость падения
 
         Vector3f forward = getForward();
         forward.y = 0;
