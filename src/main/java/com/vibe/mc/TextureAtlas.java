@@ -41,7 +41,8 @@ public class TextureAtlas {
         "textures/water_placeholder.png",
         "textures/wheat.png",
         "textures/iron_block.png",
-        "textures/coal_block.png"
+        "textures/coal_block.png",
+        "textures/glass.png"
     };
 
     public static int create() {
