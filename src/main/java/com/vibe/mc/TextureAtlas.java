@@ -38,8 +38,8 @@ public class TextureAtlas {
         "textures/furnace_top.png",         // 18
         "textures/furnace_side.png",        // 19
         "textures/furnace_front.png",       // 20
-        "textures/water_still.png",
-        "textures/wheat_stage_7.png",
+        "textures/water_placeholder.png",
+        "textures/wheat.png",
         "textures/iron_block.png",
         "textures/coal_block.png"
     };
