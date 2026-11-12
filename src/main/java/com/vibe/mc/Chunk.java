@@ -97,18 +97,16 @@ public class Chunk {
 
     /** Генерирует ландшафт с офсетом (мировые координаты) + деревья. */
     public void generate(long seed, int offsetX, int offsetZ) {
-        // карта высот: шум в мировых координатах
+        // 1) Карта высот
         int[][] height = new int[SX][SZ];
-        int baseGx = offsetX / 4;
-        int baseGz = offsetZ / 4;
+        int baseGx = offsetX / 4, baseGz = offsetZ / 4;
         for (int x = 0; x < SX; x++) {
             for (int z = 0; z < SZ; z++) {
-                int gx = baseGx + x / 4;
-                int gz = baseGz + z / 4;
+                int gx = baseGx + x / 4, gz = baseGz + z / 4;
                 float fx = (x % 4) / 4f, fz = (z % 4) / 4f;
-                int h00 = rawNoise(gx,     gz,     seed);
-                int h10 = rawNoise(gx + 1, gz,     seed);
-                int h01 = rawNoise(gx,     gz + 1, seed);
+                int h00 = rawNoise(gx, gz, seed);
+                int h10 = rawNoise(gx + 1, gz, seed);
+                int h01 = rawNoise(gx, gz + 1, seed);
                 int h11 = rawNoise(gx + 1, gz + 1, seed);
                 float a = h00 + (h10 - h00) * fx;
                 float b = h01 + (h11 - h01) * fx;
@@ -116,6 +114,8 @@ public class Chunk {
                 height[x][z] = 8 + Math.round(h);
             }
         }
+
+        // 2) Базовый рельеф (камень, грязь, трава)
         for (int x = 0; x < SX; x++) {
             for (int z = 0; z < SZ; z++) {
                 int h = height[x][z];
@@ -130,38 +130,18 @@ public class Chunk {
                 }
             }
         }
-        // ВОДА И ПЕСОК: только в глубоких низинах (h < 10)
-        for (int x = 0; x < SX; x++) {
-            for (int z = 0; z < SZ; z++) {
-                int h = height[x][z];
-                if (h < 10) {
-                    for (int y = h; y <= 10; y++) {
-                        set(x, y, z, BlockType.WATER);
-                    }
-                    // Песок на берегу (уровень 10-11)
-                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
-                        int nx = x + dx, nz = z + dz;
-                        if (inBounds(nx, 11, nz) && get(nx, 11, nz) == BlockType.GRASS) {
-                            set(nx, 11, nz, BlockType.SAND);
-                            set(nx, 10, nz, BlockType.SAND);
-                        }
-                    }
-                }
-            }
-        }
 
-        // КРАТЕРЫ С ВОДОЙ (озёра)
+        // 3) КРАТЕРЫ (озёра)
         java.util.Random lakeRng = new java.util.Random(seed * 55L);
-        int numLakes = 2 + lakeRng.nextInt(3); // 2-4 озера на чанк
+        int numLakes = 1 + lakeRng.nextInt(3);
         for (int l = 0; l < numLakes; l++) {
             int cx = 4 + lakeRng.nextInt(SX - 8);
             int cz = 4 + lakeRng.nextInt(SZ - 8);
             int h = height[cx][cz];
-            if (h < 6) continue; // слишком глубоко — не делаем
-            int radius = 3 + lakeRng.nextInt(3); // 3-5 блоков
+            if (h < 7) continue;
+            int radius = 3 + lakeRng.nextInt(3);
             int waterLevel = h - 1;
 
-            // Выкапываем кратер (сфера)
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dz = -radius; dz <= radius; dz++) {
                     for (int dy = -2; dy <= 3; dy++) {
@@ -170,14 +150,14 @@ public class Chunk {
                             int x = cx + dx, z = cz + dz, y = h + dy;
                             if (inBounds(x, y, z)) {
                                 if (y <= waterLevel) set(x, y, z, BlockType.WATER);
-                                else set(x, y, z, BlockType.AIR);
+                                else if (y <= h) set(x, y, z, BlockType.AIR);
                             }
                         }
                     }
                 }
             }
 
-            // Песок по краям кратера
+            // Песок вокруг
             for (int dx = -radius-1; dx <= radius+1; dx++) {
                 for (int dz = -radius-1; dz <= radius+1; dz++) {
                     int dist = dx*dx + dz*dz;
@@ -187,10 +167,6 @@ public class Chunk {
                             BlockType under = get(x, waterLevel, z);
                             if (under == BlockType.GRASS || under == BlockType.DIRT || under == BlockType.AIR) {
                                 set(x, waterLevel + 1, z, BlockType.SAND);
-                                // И на уровень ниже, чтобы был пляж
-                                if (inBounds(x, waterLevel, z) && get(x, waterLevel, z) == BlockType.AIR) {
-                                    set(x, waterLevel, z, BlockType.SAND);
-                                }
                             }
                         }
                     }
@@ -198,15 +174,24 @@ public class Chunk {
             }
         }
 
-        // деревья (после кратеров)
+        // 4) ДЕРЕВЬЯ (только там, где GRASS на поверхности)
         java.util.Random rng = new java.util.Random(seed * 31L + offsetX * 1000L + offsetZ);
         java.util.List<int[]> trees = new java.util.ArrayList<>();
-        for (int x = 1; x < SX - 1; x++) {
-            for (int z = 1; z < SZ - 1; z++) {
+        for (int x = 2; x < SX - 2; x++) {
+            for (int z = 2; z < SZ - 2; z++) {
                 if (rng.nextFloat() >= 0.05f) continue;
                 int h = height[x][z];
-                // Не ставим дерево, если под ним вода или песок
+                // Проверяем, что на поверхности трава (не вода/песок/воздух)
                 if (get(x, h, z) != BlockType.GRASS) continue;
+                // Проверяем, что рядом нет воды (радиус 2)
+                boolean nearWater = false;
+                for (int dx = -2; dx <= 2 && !nearWater; dx++) {
+                    for (int dz = -2; dz <= 2 && !nearWater; dz++) {
+                        if (get(x + dx, h, z + dz) == BlockType.WATER) nearWater = true;
+                    }
+                }
+                if (nearWater) continue;
+
                 boolean tooClose = false;
                 for (int[] t : trees) {
                     int dx = t[0] - x, dz = t[1] - z;
@@ -217,26 +202,24 @@ public class Chunk {
                 placeTree(x, z, h, rng);
             }
         }
+        Logger.info("[Chunk] (" + (offsetX/16) + "," + (offsetZ/16) + ") trees=" + trees.size());
 
-        // ============ РУДЫ ============
+        // 5) РУДЫ
         java.util.Random oreRng = new java.util.Random(seed * 7L + offsetX * 13L + offsetZ * 17L);
-        // уголь: 5-50, 40 попыток (чаще)
         for (int i = 0; i < 40; i++) {
             int ox = oreRng.nextInt(SX), oz = oreRng.nextInt(SZ);
-            int oy = 5 + oreRng.nextInt(45);
-            placeOre(ox, oy, oz, BlockType.COAL_ORE, oreRng, 4 + oreRng.nextInt(5));
+            int oy = 5 + oreRng.nextInt(35);
+            placeOre(ox, oy, oz, BlockType.COAL_ORE, oreRng, 3 + oreRng.nextInt(4));
         }
-        // железо: 5-40, 25 попыток (чаще)
         for (int i = 0; i < 25; i++) {
             int ox = oreRng.nextInt(SX), oz = oreRng.nextInt(SZ);
-            int oy = 5 + oreRng.nextInt(35);
-            placeOre(ox, oy, oz, BlockType.IRON_ORE, oreRng, 3 + oreRng.nextInt(4));
+            int oy = 5 + oreRng.nextInt(25);
+            placeOre(ox, oy, oz, BlockType.IRON_ORE, oreRng, 2 + oreRng.nextInt(4));
         }
-        // алмазы: 1-16, 8 попыток (чаще)
         for (int i = 0; i < 8; i++) {
             int ox = oreRng.nextInt(SX), oz = oreRng.nextInt(SZ);
             int oy = 1 + oreRng.nextInt(15);
-            placeOre(ox, oy, oz, BlockType.DIAMOND_ORE, oreRng, 2 + oreRng.nextInt(3));
+            placeOre(ox, oy, oz, BlockType.DIAMOND_ORE, oreRng, 1 + oreRng.nextInt(3));
         }
     }
 
