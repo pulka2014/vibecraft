@@ -115,7 +115,7 @@ public class Chunk {
             }
         }
 
-        // 2) Базовый рельеф (камень, грязь, трава)
+        // 2) Базовый рельеф
         for (int x = 0; x < SX; x++) {
             for (int z = 0; z < SZ; z++) {
                 int h = height[x][z];
@@ -131,42 +131,47 @@ public class Chunk {
             }
         }
 
-        // 3) КРАТЕРЫ (озёра)
+        // 3) ОЗЕРА (редко, только в низинах)
         java.util.Random lakeRng = new java.util.Random(seed * 55L);
-        int numLakes = 1 + lakeRng.nextInt(3);
-        for (int l = 0; l < numLakes; l++) {
-            int cx = 4 + lakeRng.nextInt(SX - 8);
-            int cz = 4 + lakeRng.nextInt(SZ - 8);
+        // 1 озеро с шансом 30%, иначе 0
+        if (lakeRng.nextFloat() < 0.3f) {
+            int cx = 6 + lakeRng.nextInt(SX - 12);
+            int cz = 6 + lakeRng.nextInt(SZ - 12);
             int h = height[cx][cz];
-            if (h < 7) continue;
-            int radius = 3 + lakeRng.nextInt(3);
+            if (h > 12) h = 12; // не выше 12
+            int radius = 2 + lakeRng.nextInt(2); // 2-3 блока
             int waterLevel = h - 1;
 
+            // Выкапываем яму
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dz = -radius; dz <= radius; dz++) {
-                    for (int dy = -2; dy <= 3; dy++) {
+                    for (int dy = -1; dy <= 1; dy++) {
                         int dist = dx*dx + dz*dz + dy*dy;
                         if (dist <= radius*radius) {
                             int x = cx + dx, z = cz + dz, y = h + dy;
                             if (inBounds(x, y, z)) {
                                 if (y <= waterLevel) set(x, y, z, BlockType.WATER);
-                                else if (y <= h) set(x, y, z, BlockType.AIR);
+                                else set(x, y, z, BlockType.AIR);
                             }
                         }
                     }
                 }
             }
 
-            // Песок вокруг
+            // Песок только на уровне воды (не выше)
             for (int dx = -radius-1; dx <= radius+1; dx++) {
                 for (int dz = -radius-1; dz <= radius+1; dz++) {
                     int dist = dx*dx + dz*dz;
                     if (dist > radius*radius && dist <= (radius+1)*(radius+1)) {
                         int x = cx + dx, z = cz + dz;
-                        if (inBounds(x, waterLevel + 1, z)) {
-                            BlockType under = get(x, waterLevel, z);
-                            if (under == BlockType.GRASS || under == BlockType.DIRT || under == BlockType.AIR) {
-                                set(x, waterLevel + 1, z, BlockType.SAND);
+                        if (inBounds(x, waterLevel, z)) {
+                            BlockType under = get(x, waterLevel - 1, z);
+                            if (under == BlockType.GRASS || under == BlockType.DIRT) {
+                                set(x, waterLevel, z, BlockType.SAND);
+                                // И на один уровень выше (чтобы был берег)
+                                if (get(x, waterLevel + 1, z) == BlockType.AIR) {
+                                    set(x, waterLevel + 1, z, BlockType.SAND);
+                                }
                             }
                         }
                     }
@@ -174,23 +179,30 @@ public class Chunk {
             }
         }
 
-        // 4) ДЕРЕВЬЯ (только там, где GRASS на поверхности)
+        // 4) ДЕРЕВЬЯ (проверяем, что трава и нет воды рядом)
         java.util.Random rng = new java.util.Random(seed * 31L + offsetX * 1000L + offsetZ);
         java.util.List<int[]> trees = new java.util.ArrayList<>();
         for (int x = 2; x < SX - 2; x++) {
             for (int z = 2; z < SZ - 2; z++) {
                 if (rng.nextFloat() >= 0.05f) continue;
                 int h = height[x][z];
-                // Проверяем, что на поверхности трава (не вода/песок/воздух)
                 if (get(x, h, z) != BlockType.GRASS) continue;
-                // Проверяем, что рядом нет воды (радиус 2)
+                // Проверяем, что нет воды рядом (радиус 3)
                 boolean nearWater = false;
-                for (int dx = -2; dx <= 2 && !nearWater; dx++) {
-                    for (int dz = -2; dz <= 2 && !nearWater; dz++) {
+                for (int dx = -3; dx <= 3 && !nearWater; dx++) {
+                    for (int dz = -3; dz <= 3 && !nearWater; dz++) {
                         if (get(x + dx, h, z + dz) == BlockType.WATER) nearWater = true;
                     }
                 }
                 if (nearWater) continue;
+                // Проверяем, что нет песка рядом
+                boolean nearSand = false;
+                for (int dx = -1; dx <= 1 && !nearSand; dx++) {
+                    for (int dz = -1; dz <= 1 && !nearSand; dz++) {
+                        if (get(x + dx, h, z + dz) == BlockType.SAND) nearSand = true;
+                    }
+                }
+                if (nearSand) continue;
 
                 boolean tooClose = false;
                 for (int[] t : trees) {
