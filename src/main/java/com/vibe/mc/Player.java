@@ -83,9 +83,15 @@ public class Player {
         }
 
         // 3) движение по осям (moveAxis выставит onGround при приземлении)
+        float fallSpeed = velocity.y;
         moveAxis(world, velocity.x * dt, 0, 0);
         moveAxis(world, 0, velocity.y * dt, 0);
         moveAxis(world, 0, 0, velocity.z * dt);
+        
+        if (onGround && fallSpeed < -10f) {
+            health -= (int)(Math.abs(fallSpeed) / 3f);
+            if (health < 0) health = 0;
+        }
         if (position.y < 0f) { position.y = 0f; velocity.y = 0f; onGround = true; }
 
         // 4) пере-проверка «под ногами есть опора» (включая плиту)

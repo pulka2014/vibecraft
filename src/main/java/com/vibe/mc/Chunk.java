@@ -130,6 +130,26 @@ public class Chunk {
                 }
             }
         }
+        // ВОДА И ПЕСОК: если высота < 14, заливаем водой до 14
+        for (int x = 0; x < SX; x++) {
+            for (int z = 0; z < SZ; z++) {
+                int h = height[x][z];
+                if (h < 14) {
+                    for (int y = h; y <= 14; y++) {
+                        set(x, y, z, BlockType.WATER);
+                    }
+                    // Песок вокруг
+                    for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                        int nx = x + dx, nz = z + dz;
+                        if (inBounds(nx, 15, nz) && get(nx, 15, nz) == BlockType.GRASS) {
+                            set(nx, 15, nz, BlockType.SAND);
+                            set(nx, 14, nz, BlockType.SAND);
+                        }
+                    }
+                }
+            }
+        }
+
         // деревья
         java.util.Random rng = new java.util.Random(seed * 31L + offsetX * 1000L + offsetZ);
         java.util.List<int[]> trees = new java.util.ArrayList<>();
