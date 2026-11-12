@@ -67,7 +67,16 @@ public class Player {
         }
 
         // 2) гравитация
-        velocity.y += GRAVITY * dt;
+        boolean inWater = world.getBlock((int)Math.floor(position.x), (int)Math.floor(position.y + 0.5f), (int)Math.floor(position.z)) == BlockType.WATER;
+        if (inWater) {
+            velocity.y *= 0.8f; // медленное падение
+            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) {
+                velocity.y = 4f; // всплытие
+            }
+            if (velocity.y < -2f) velocity.y = -2f; // не тонем слишком быстро
+        } else {
+            velocity.y += GRAVITY * dt;
+        }
         if (velocity.y < -50f) velocity.y = -50f;
         
         // Голод тратится при движении
@@ -88,8 +97,10 @@ public class Player {
         moveAxis(world, 0, velocity.y * dt, 0);
         moveAxis(world, 0, 0, velocity.z * dt);
         
-        if (onGround && fallSpeed < -10f) {
-            health -= (int)(Math.abs(fallSpeed) / 3f);
+        if (onGround && fallSpeed < -8f) { // ~4 блока
+            int dmg = (int)(Math.abs(fallSpeed) / 8f); // 1 HP за 4 блока
+            if (dmg < 1) dmg = 1;
+            health -= dmg;
             if (health < 0) health = 0;
         }
         if (position.y < 0f) { position.y = 0f; velocity.y = 0f; onGround = true; }

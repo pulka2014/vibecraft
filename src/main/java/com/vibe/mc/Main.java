@@ -27,6 +27,7 @@ public class Main {
         LoadingScreen loadingScreen;
         CheatUI cheatUI;
         HUD hud;
+        DeathScreen deathScreen;
         boolean loadingScreenActive = false;
         Integer activeSlot = null;
     }
@@ -198,6 +199,7 @@ public class Main {
         gs.loadingScreen = new LoadingScreen(font);
         gs.cheatUI = new CheatUI(font);
         gs.hud = new HUD();
+        gs.deathScreen = new DeathScreen(font);
 
         final long win = window;
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
@@ -499,6 +501,7 @@ public class Main {
                         gs.loadingScreen = new LoadingScreen(font);
         gs.cheatUI = new CheatUI(font);
         gs.hud = new HUD();
+        gs.deathScreen = new DeathScreen(font);
                         gs.loadingScreen.total.set(World.SIZE * Chunk.SX * World.SIZE * Chunk.SZ);
                         gs.loadingScreen.loaded.set(0);
                         gs.loadingScreen.finished = false;
@@ -573,7 +576,19 @@ public class Main {
 
             // ---- игра ----
             gs.world.flushRebuilds();
-            if (!pause.isOpen()) {
+            if (gs.player.health <= 0 && !gs.deathScreen.isOpen()) {
+                gs.deathScreen.open();
+                GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+            }
+            if (gs.deathScreen.isOpen()) {
+                if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ENTER) == GLFW.GLFW_PRESS) {
+                    gs.player.health = 20;
+                    gs.player.food = 20;
+                    gs.player.position.set(World.SIZE * Chunk.SX / 2f, 70f, World.SIZE * Chunk.SZ / 2f);
+                    gs.deathScreen.close();
+                    GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+                }
+            } else if (!pause.isOpen()) {
                 gs.time.update(dt);
                 if (Cheats.enabled && Cheats.fly) {
                     gs.player.velocity.y = 0;
@@ -651,6 +666,7 @@ public class Main {
             crosshair.render();
             gs.hotbar.render();
             gs.hud.render(gs.player);
+            gs.deathScreen.render();
             gs.invScreen.render();
             gs.craftScreen.render();
             gs.furnaceScreen.render();

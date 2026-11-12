@@ -130,20 +130,20 @@ public class Chunk {
                 }
             }
         }
-        // ВОДА И ПЕСОК: если высота < 14, заливаем водой до 14
+        // ВОДА И ПЕСОК: только в глубоких низинах (h < 10)
         for (int x = 0; x < SX; x++) {
             for (int z = 0; z < SZ; z++) {
                 int h = height[x][z];
-                if (h < 14) {
-                    for (int y = h; y <= 14; y++) {
+                if (h < 10) {
+                    for (int y = h; y <= 10; y++) {
                         set(x, y, z, BlockType.WATER);
                     }
-                    // Песок вокруг
+                    // Песок на берегу (уровень 10-11)
                     for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
                         int nx = x + dx, nz = z + dz;
-                        if (inBounds(nx, 15, nz) && get(nx, 15, nz) == BlockType.GRASS) {
-                            set(nx, 15, nz, BlockType.SAND);
-                            set(nx, 14, nz, BlockType.SAND);
+                        if (inBounds(nx, 11, nz) && get(nx, 11, nz) == BlockType.GRASS) {
+                            set(nx, 11, nz, BlockType.SAND);
+                            set(nx, 10, nz, BlockType.SAND);
                         }
                     }
                 }
