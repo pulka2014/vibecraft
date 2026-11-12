@@ -26,6 +26,7 @@ public class Main {
         FurnaceScreen furnaceScreen;
         LoadingScreen loadingScreen;
         CheatUI cheatUI;
+        HUD hud;
         boolean loadingScreenActive = false;
         Integer activeSlot = null;
     }
@@ -196,6 +197,7 @@ public class Main {
         gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
         gs.loadingScreen = new LoadingScreen(font);
         gs.cheatUI = new CheatUI(font);
+        gs.hud = new HUD();
 
         final long win = window;
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
@@ -496,6 +498,7 @@ public class Main {
                         // Создаём LoadingScreen и запускаем загрузку в фоне
                         gs.loadingScreen = new LoadingScreen(font);
         gs.cheatUI = new CheatUI(font);
+        gs.hud = new HUD();
                         gs.loadingScreen.total.set(World.SIZE * Chunk.SX * World.SIZE * Chunk.SZ);
                         gs.loadingScreen.loaded.set(0);
                         gs.loadingScreen.finished = false;
@@ -647,6 +650,7 @@ public class Main {
             gs.world.drops.render(proj, gs.player.getViewMatrix(), tex);
             crosshair.render();
             gs.hotbar.render();
+            gs.hud.render(gs.player);
             gs.invScreen.render();
             gs.craftScreen.render();
             gs.furnaceScreen.render();

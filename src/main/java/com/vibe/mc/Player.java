@@ -15,6 +15,7 @@ public class Player {
     public boolean crouching = false;
     public int health = 20;
     public int food = 20;
+    public float foodTimer = 0f;
 
     public static final float WIDTH = 0.6f;
     public static final float HEIGHT = 1.8f;
@@ -68,6 +69,18 @@ public class Player {
         // 2) гравитация
         velocity.y += GRAVITY * dt;
         if (velocity.y < -50f) velocity.y = -50f;
+        
+        // Голод тратится при движении
+        if (Math.abs(velocity.x) > 0.1f || Math.abs(velocity.z) > 0.1f) {
+            foodTimer += dt;
+            if (foodTimer > 5.0f) { food--; foodTimer = 0; if (food < 0) food = 0; }
+        }
+        
+        // Урон от падения
+        if (onGround && velocity.y < -10f && !Cheats.godMode) {
+            health -= (int)(Math.abs(velocity.y) / 3f);
+            if (health < 0) health = 0;
+        }
 
         // 3) движение по осям (moveAxis выставит onGround при приземлении)
         moveAxis(world, velocity.x * dt, 0, 0);
