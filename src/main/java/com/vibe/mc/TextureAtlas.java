@@ -11,7 +11,7 @@ import java.nio.ByteBuffer;
 
 public class TextureAtlas {
     public static final int TILE = 16;
-    public static final int COUNT = 21;
+    public static final int COUNT = 26;
     public static final int W = TILE * COUNT;
     public static final int H = TILE;
     public static final float TILE_U = 1.0f / COUNT; // ширина одного тайла в UV
@@ -37,7 +37,11 @@ public class TextureAtlas {
         "textures/diamond_ore.png",         // 17
         "textures/furnace_top.png",         // 18
         "textures/furnace_side.png",        // 19
-        "textures/furnace_front.png"        // 20
+        "textures/furnace_front.png",       // 20
+        "textures/water_still.png",
+        "textures/wheat_stage_7.png",
+        "textures/iron_block.png",
+        "textures/coal_block.png"
     };
 
     public static int create() {

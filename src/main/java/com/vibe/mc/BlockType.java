@@ -15,7 +15,13 @@ public enum BlockType {
     COAL_ORE(11, 15, 15, 15, 15, 3.0f, "pickaxe"),
     IRON_ORE(12, 16, 16, 16, 16, 3.0f, "pickaxe"),
     DIAMOND_ORE(13, 17, 17, 17, 17, 3.0f, "pickaxe"),
-    FURNACE        (14, 18, 19, 18, 20, 3.5f, "pickaxe");
+    FURNACE        (14, 18, 19, 18, 20, 3.5f, "pickaxe"),
+    WATER       (15, 21, 21, 21, 21, 0.0f, null),
+    WHEAT       (16, 22, 22, 22, 22, 0.1f, null),
+    FARMLAND    (17, 2, 2, 2, 2, 0.5f, "shovel"),
+    IRON_BLOCK  (18, 23, 23, 23, 23, 3.0f, "pickaxe"),
+    COAL_BLOCK  (19, 24, 24, 24, 24, 3.0f, "pickaxe"),
+    GLASS       (20, 25, 25, 25, 25, 0.3f, null);
 
     public final byte id;
     public final int tileTop;

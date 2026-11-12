@@ -107,9 +107,23 @@ public class FurnaceScreen {
         if (smeltProgress >= 1f) {
             smeltProgress = 0;
             Inventory.Slot res = grid[2];
-            if (res.isEmpty()) { res.item = ItemType.IRON_INGOT; res.count = 1; }
-            else if (res.isItem() && res.item == ItemType.IRON_INGOT && res.count < Inventory.MAX_STACK) res.count++;
-            else return false;
+            ItemType resultItem = null;
+            BlockType resultBlock = null;
+            if (mat.isItem() && mat.item == ItemType.RAW_IRON) resultItem = ItemType.IRON_INGOT;
+            else if (mat.isItem() && mat.item == ItemType.WHEAT) resultItem = ItemType.BREAD;
+            else if (mat.isBlock() && mat.block == BlockType.SAND) resultBlock = BlockType.GLASS;
+            else if (mat.isBlock() && mat.block == BlockType.WOOD) resultItem = ItemType.COAL;
+
+            if (resultItem != null) {
+                if (res.isEmpty()) { res.item = resultItem; res.count = 1; }
+                else if (res.isItem() && res.item == resultItem && res.count < Inventory.MAX_STACK) res.count++;
+                else return false;
+            } else if (resultBlock != null) {
+                if (res.isEmpty()) { res.block = resultBlock; res.count = 1; }
+                else if (res.isBlock() && res.block == resultBlock && res.count < Inventory.MAX_STACK) res.count++;
+                else return false;
+            } else return false;
+            
             mat.count--; if (mat.count <= 0) mat.clear();
             return true;
         }
@@ -128,7 +142,13 @@ public class FurnaceScreen {
         return 0f;
     }
     private boolean isSmeltable(Inventory.Slot s) {
-        return s.isItem() && s.item == ItemType.RAW_IRON;
+        if (s.isItem()) {
+            return s.item == ItemType.RAW_IRON || s.item == ItemType.WHEAT;
+        }
+        if (s.isBlock()) {
+            return s.block == BlockType.SAND || s.block == BlockType.WOOD;
+        }
+        return false;
     }
 
     public void click(boolean right) {

@@ -18,7 +18,22 @@ public enum ItemType {
     IRON_INGOT     (14, "textures/iron_ingot.png",      null,      1f),
     IRON_PICKAXE   (15, "textures/iron_pickaxe.png",    "pickaxe", 7f),
     IRON_AXE       (16, "textures/iron_axe.png",        "axe",     7f),
-    IRON_SHOVEL    (17, "textures/iron_shovel.png",     "shovel",  7f);
+    IRON_SHOVEL    (17, "textures/iron_shovel.png",     "shovel",  7f),
+
+    // Новые предметы (1.0.2)
+    WHEAT_SEEDS    (18, "textures/wheat_seeds.png",     null,      1f),
+    WHEAT          (19, "textures/wheat.png",           null,      1f),
+    BREAD          (20, "textures/bread.png",           null,      1f),
+    WOODEN_SWORD   (21, "textures/wooden_sword.png",    "sword",   4f),
+    STONE_SWORD    (22, "textures/stone_sword.png",     "sword",   6f),
+    IRON_SWORD     (23, "textures/iron_sword.png",      "sword",   7f),
+    DIAMOND_SWORD  (24, "textures/diamond_sword.png",   "sword",   8f),
+    WOODEN_HOE     (25, "textures/wooden_hoe.png",      "hoe",     4f),
+    STONE_HOE      (26, "textures/stone_hoe.png",       "hoe",     6f),
+    IRON_HOE       (27, "textures/iron_hoe.png",        "hoe",     7f),
+    DIAMOND_HOE    (28, "textures/diamond_hoe.png",     "hoe",     8f),
+    BUCKET         (29, "textures/bucket.png",          null,      1f),
+    WATER_BUCKET   (30, "textures/water_bucket.png",    null,      1f);
 
     public final byte id;
     public final String texture;
@@ -34,10 +49,10 @@ public enum ItemType {
 
     public int tier() {
         return switch (this) {
-            case WOODEN_PICKAXE, WOODEN_AXE, WOODEN_SHOVEL -> 0;
-            case STONE_PICKAXE, STONE_AXE, STONE_SHOVEL -> 1;
-            case IRON_PICKAXE, IRON_AXE, IRON_SHOVEL -> 2;
-            case DIAMOND_PICKAXE, DIAMOND_AXE, DIAMOND_SHOVEL -> 3;
+            case WOODEN_PICKAXE, WOODEN_AXE, WOODEN_SHOVEL, WOODEN_SWORD, WOODEN_HOE -> 0;
+            case STONE_PICKAXE, STONE_AXE, STONE_SHOVEL, STONE_SWORD, STONE_HOE -> 1;
+            case IRON_PICKAXE, IRON_AXE, IRON_SHOVEL, IRON_SWORD, IRON_HOE -> 2;
+            case DIAMOND_PICKAXE, DIAMOND_AXE, DIAMOND_SHOVEL, DIAMOND_SWORD, DIAMOND_HOE -> 3;
             default -> -1;
         };
     }

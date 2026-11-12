@@ -174,6 +174,30 @@ public class Crafting {
             && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) {
             return new Result(ItemType.IRON_SHOVEL, 1);
         }
+
+        // Мотыги и мечи
+        if (countNonEmpty(g) == 3) {
+            if (isPlanks3(g, 0, 0) && isPlanks3(g, 1, 0) && isItem3(g, 1, 1, ItemType.STICK)) return new Result(ItemType.WOODEN_SWORD, 1);
+            if (isBlock3(g, 0, 0, BlockType.STONE) && isBlock3(g, 1, 0, BlockType.STONE) && isItem3(g, 1, 1, ItemType.STICK)) return new Result(ItemType.STONE_SWORD, 1);
+            if (isItem3(g, 0, 0, ItemType.IRON_INGOT) && isItem3(g, 1, 0, ItemType.IRON_INGOT) && isItem3(g, 1, 1, ItemType.STICK)) return new Result(ItemType.IRON_SWORD, 1);
+            if (isItem3(g, 0, 0, ItemType.DIAMOND) && isItem3(g, 1, 0, ItemType.DIAMOND) && isItem3(g, 1, 1, ItemType.STICK)) return new Result(ItemType.DIAMOND_SWORD, 1);
+
+            if (isPlanks3(g, 0, 0) && isPlanks3(g, 1, 0) && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) return new Result(ItemType.WOODEN_HOE, 1);
+            if (isBlock3(g, 0, 0, BlockType.STONE) && isBlock3(g, 1, 0, BlockType.STONE) && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) return new Result(ItemType.STONE_HOE, 1);
+            if (isItem3(g, 0, 0, ItemType.IRON_INGOT) && isItem3(g, 1, 0, ItemType.IRON_INGOT) && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) return new Result(ItemType.IRON_HOE, 1);
+            if (isItem3(g, 0, 0, ItemType.DIAMOND) && isItem3(g, 1, 0, ItemType.DIAMOND) && isItem3(g, 1, 1, ItemType.STICK) && isItem3(g, 1, 2, ItemType.STICK)) return new Result(ItemType.DIAMOND_HOE, 1);
+        }
+
+        // Хлеб (3 пшеницы в ряд)
+        if (countNonEmpty(g) == 3 && isItem3(g, 0, 0, ItemType.WHEAT) && isItem3(g, 1, 0, ItemType.WHEAT) && isItem3(g, 2, 0, ItemType.WHEAT)) {
+            return new Result(ItemType.BREAD, 1);
+        }
+
+        // Ведро (3 железных слитка)
+        if (countNonEmpty(g) == 3 && isItem3(g, 0, 0, ItemType.IRON_INGOT) && isItem3(g, 1, 0, ItemType.IRON_INGOT) && isItem3(g, 2, 0, ItemType.IRON_INGOT)) {
+            return new Result(ItemType.BUCKET, 1);
+        }
+
         return null;
     }
 
