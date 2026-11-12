@@ -184,20 +184,29 @@ public class Chunk {
                     if (dist > radius*radius && dist <= (radius+1)*(radius+1)) {
                         int x = cx + dx, z = cz + dz;
                         if (inBounds(x, waterLevel + 1, z)) {
-                            set(x, waterLevel + 1, z, BlockType.SAND);
+                            BlockType under = get(x, waterLevel, z);
+                            if (under == BlockType.GRASS || under == BlockType.DIRT || under == BlockType.AIR) {
+                                set(x, waterLevel + 1, z, BlockType.SAND);
+                                // И на уровень ниже, чтобы был пляж
+                                if (inBounds(x, waterLevel, z) && get(x, waterLevel, z) == BlockType.AIR) {
+                                    set(x, waterLevel, z, BlockType.SAND);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        // деревья
+        // деревья (после кратеров)
         java.util.Random rng = new java.util.Random(seed * 31L + offsetX * 1000L + offsetZ);
         java.util.List<int[]> trees = new java.util.ArrayList<>();
         for (int x = 1; x < SX - 1; x++) {
             for (int z = 1; z < SZ - 1; z++) {
                 if (rng.nextFloat() >= 0.05f) continue;
                 int h = height[x][z];
+                // Не ставим дерево, если под ним вода или песок
+                if (get(x, h, z) != BlockType.GRASS) continue;
                 boolean tooClose = false;
                 for (int[] t : trees) {
                     int dx = t[0] - x, dz = t[1] - z;
@@ -208,7 +217,6 @@ public class Chunk {
                 placeTree(x, z, h, rng);
             }
         }
-        Logger.info("[Chunk] (" + (offsetX/16) + "," + (offsetZ/16) + ") trees=" + trees.size());
 
         // ============ РУДЫ ============
         java.util.Random oreRng = new java.util.Random(seed * 7L + offsetX * 13L + offsetZ * 17L);

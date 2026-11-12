@@ -133,8 +133,8 @@ public class ParticleSystem {
                 GL20.glUniformMatrix4fv(uModel, false, pb);
             }
             GL20.glUniform1f(uUVOffset, p.type.tileSide * TextureAtlas.TILE_U);
-            if (p.type == BlockType.GRASS) GL20.glUniform3f(uTintColor, 0.35f, 0.85f, 0.30f);
-            else if (p.type == BlockType.LEAVES) GL20.glUniform3f(uTintColor, 0.25f, 0.65f, 0.20f);
+            if (p.type == BlockType.GRASS) GL20.glUniform3f(uTintColor, 0.6f, 1.0f, 0.5f);
+            else if (p.type == BlockType.LEAVES) GL20.glUniform3f(uTintColor, 0.4f, 0.8f, 0.3f);
             else GL20.glUniform3f(uTintColor, 1f, 1f, 1f);
             GL11.glDrawElements(GL11.GL_TRIANGLES, INDICES.length, GL11.GL_UNSIGNED_INT, 0);
         }

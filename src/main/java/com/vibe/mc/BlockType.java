@@ -3,7 +3,7 @@ package com.vibe.mc;
 public enum BlockType {
     AIR            (0, -1, -1, -1, -1, 0f, null),
     GRASS          (1,  0,  1,  2,  1, 0.6f, "shovel"),
-    DIRT(2, 2, 2, 2, 2, 0.5f, "shovel"),
+    DIRT           (2, 2, 2, 2, 2, 0.5f, "shovel"),
     STONE(3, 3, 3, 3, 3, 1.5f, "pickaxe"),
     SAND           (4,  4,  4,  4,  4, 0.5f, "shovel"),
     WOOD           (5,  6,  5,  6,  5, 2.0f, "axe"),
