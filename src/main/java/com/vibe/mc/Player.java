@@ -13,6 +13,8 @@ public class Player {
     public float mouseSensitivity = 0.12f;
     public boolean onGround = false;
     public boolean crouching = false;
+    public int health = 20;
+    public int food = 20;
 
     public static final float WIDTH = 0.6f;
     public static final float HEIGHT = 1.8f;

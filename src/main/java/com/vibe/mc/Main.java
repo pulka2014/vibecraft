@@ -25,6 +25,7 @@ public class Main {
         CraftingScreen craftScreen;
         FurnaceScreen furnaceScreen;
         LoadingScreen loadingScreen;
+        CheatUI cheatUI;
         boolean loadingScreenActive = false;
         Integer activeSlot = null;
     }
@@ -194,6 +195,7 @@ public class Main {
         gs.craftScreen = new CraftingScreen(tex, itemTex, gs.world.inventory, font);
         gs.furnaceScreen = new FurnaceScreen(tex, itemTex, gs.world.inventory, font);
         gs.loadingScreen = new LoadingScreen(font);
+        gs.cheatUI = new CheatUI(font);
 
         final long win = window;
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
@@ -291,6 +293,14 @@ public class Main {
                 for (Chunk c : gs.world.chunks.values()) c.buildMesh();
                 return;
             }
+            if (Cheats.enabled) {
+                if (key == GLFW.GLFW_KEY_F4) { Cheats.xray = !Cheats.xray; XRay.enabled = Cheats.xray; for (Chunk c : gs.world.chunks.values()) c.buildMesh(); return; }
+                if (key == GLFW.GLFW_KEY_F6) { Cheats.fly = !Cheats.fly; return; }
+                if (key == GLFW.GLFW_KEY_F7) { Cheats.speed = !Cheats.speed; return; }
+                if (key == GLFW.GLFW_KEY_F9) { Cheats.infiniteBlocks = !Cheats.infiniteBlocks; return; }
+                if (key == GLFW.GLFW_KEY_F10) { Cheats.nightVision = !Cheats.nightVision; return; }
+                if (key == GLFW.GLFW_KEY_F11) { Cheats.godMode = !Cheats.godMode; return; }
+            }
             if (key == GLFW.GLFW_KEY_F3) {
                 showDebug[0] = !showDebug[0];
                 System.out.println("[Main] debug " + (showDebug[0] ? "on" : "off"));
@@ -330,6 +340,8 @@ public class Main {
                     if ("Save".equals(clicked)) { try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {} }
                     if ("Settings".equals(clicked)) { pause.openSettings(); }
                     if ("Quit".equals(clicked)) {
+                        Cheats.reset();
+                        if (gs.cheatUI != null) 
                         try { SaveManager.save(gs.world, gs.player, gs.time); } catch (Exception e) {}
                         pause.close();
                         mainMenu.setOpen(true);
@@ -390,7 +402,9 @@ public class Main {
                     gs.world.placeBlock(px, py, pz, selBlock, gs.player.position, hit[3], hit[4], hit[5]);
                 }
                 if (gs.world.isSolid(px, py, pz)) {
-                    gs.hotbar.consumeSelected();
+                    if (!Cheats.enabled || !Cheats.infiniteBlocks) {
+                        gs.hotbar.consumeSelected();
+                    }
                     sound.playPlace(selBlock);
                 }
             }
@@ -474,10 +488,14 @@ public class Main {
                     if (act.startsWith("play:")) {
                         int slot = Integer.parseInt(act.substring(5));
                         gs.activeSlot = slot;
+                        boolean ctrlHeld = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS;
+                        Cheats.reset();
+                        if (ctrlHeld) { Cheats.enabled = true; }
                         final int slotFinal = slot;
 
                         // Создаём LoadingScreen и запускаем загрузку в фоне
                         gs.loadingScreen = new LoadingScreen(font);
+        gs.cheatUI = new CheatUI(font);
                         gs.loadingScreen.total.set(World.SIZE * Chunk.SX * World.SIZE * Chunk.SZ);
                         gs.loadingScreen.loaded.set(0);
                         gs.loadingScreen.finished = false;
@@ -554,7 +572,15 @@ public class Main {
             gs.world.flushRebuilds();
             if (!pause.isOpen()) {
                 gs.time.update(dt);
+                if (Cheats.enabled && Cheats.fly) {
+                    gs.player.velocity.y = 0;
+                    if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) gs.player.position.y += 10f * dt;
+                    if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS) gs.player.position.y -= 10f * dt;
+                }
+                if (Cheats.enabled && Cheats.speed) gs.player.walkSpeed = 20f;
+                else gs.player.walkSpeed = 5.5f;
                 gs.player.update(window, gs.world, dt);
+                if (Cheats.enabled && Cheats.godMode) { gs.player.health = 20; gs.player.food = 20; }
                 boolean leftDown = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
                 if (leftDown && !gs.invScreen.isOpen() && !gs.craftScreen.isOpen() && !gs.furnaceScreen.isOpen() && !pause.isOpen() && !mainMenu.isOpen()) {
                     Inventory.Slot heldSlot = gs.hotbar.selectedSlot();
@@ -626,6 +652,7 @@ public class Main {
             gs.furnaceScreen.render();
             if (showDebug[0]) debug.render();
             pause.render();
+            gs.cheatUI.render();
 
             GLFW.glfwSwapBuffers(window);
             GLFW.glfwPollEvents();
