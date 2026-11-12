@@ -39,6 +39,8 @@ public class Player {
     }
 
     public void update(long window, World world, float dt) {
+        float fallSpeed = velocity.y; // сохраняем скорость падения
+
         Vector3f forward = getForward();
         forward.y = 0;
         forward.normalize();
@@ -67,13 +69,19 @@ public class Player {
         }
 
         // 2) гравитация
-        boolean inWater = world.getBlock((int)Math.floor(position.x), (int)Math.floor(position.y + 0.5f), (int)Math.floor(position.z)) == BlockType.WATER;
-        if (inWater) {
-            velocity.y *= 0.8f; // медленное падение
-            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) {
-                velocity.y = 4f; // всплытие
+        // Проверка воды на 3 уровнях (ноги, тело, голова)
+        boolean inWater = false;
+        for (float dy : new float[]{0.1f, 0.9f, 1.5f}) {
+            if (world.getBlock((int)Math.floor(position.x), (int)Math.floor(position.y + dy), (int)Math.floor(position.z)) == BlockType.WATER) {
+                inWater = true; break;
             }
-            if (velocity.y < -2f) velocity.y = -2f; // не тонем слишком быстро
+        }
+        if (inWater) {
+            velocity.y *= 0.8f;
+            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) velocity.y = 4f;
+            if (velocity.y < -2f) velocity.y = -2f;
+            velocity.x *= 0.8f;
+            velocity.z *= 0.8f;
         } else {
             velocity.y += GRAVITY * dt;
         }
@@ -85,14 +93,14 @@ public class Player {
             if (foodTimer > 5.0f) { food--; foodTimer = 0; if (food < 0) food = 0; }
         }
         
-        // Урон от падения
-        if (onGround && velocity.y < -10f && !Cheats.godMode) {
-            health -= (int)(Math.abs(velocity.y) / 3f);
+        // Урон от падения (fallSpeed сохраняется до приземления)
+        if (onGround && fallSpeed < -14f && !Cheats.godMode) {
+            int dmg = (int)((Math.abs(fallSpeed) - 14f) / 5f) + 1;
+            health -= dmg;
             if (health < 0) health = 0;
         }
 
         // 3) движение по осям (moveAxis выставит onGround при приземлении)
-        float fallSpeed = velocity.y;
         moveAxis(world, velocity.x * dt, 0, 0);
         moveAxis(world, 0, velocity.y * dt, 0);
         moveAxis(world, 0, 0, velocity.z * dt);

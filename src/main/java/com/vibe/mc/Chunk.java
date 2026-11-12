@@ -140,12 +140,12 @@ public class Chunk {
             int h = height[cx][cz];
             if (h > 12) h = 12; // не выше 12
             int radius = 2 + lakeRng.nextInt(2); // 2-3 блока
-            int waterLevel = h - 1;
+            int waterLevel = h; // вода на уровне земли
 
             // Выкапываем яму
             for (int dx = -radius; dx <= radius; dx++) {
                 for (int dz = -radius; dz <= radius; dz++) {
-                    for (int dy = -1; dy <= 1; dy++) {
+                    for (int dy = -2; dy <= 1; dy++) {
                         int dist = dx*dx + dz*dz + dy*dy;
                         if (dist <= radius*radius) {
                             int x = cx + dx, z = cz + dz, y = h + dy;
