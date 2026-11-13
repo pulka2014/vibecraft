@@ -114,11 +114,33 @@ public class ItemDropSystem {
         float s = size * 0.5f;
         float tu = TextureAtlas.TILE_U;
 
-        // Верх/низ для травы — tileTop (серая маска + tint), бока — tileSide
-        int topTile = (type == BlockType.GRASS) ? type.tileTop : type.tileSide;
-        int sideTile = type.tileSide;
-        int bottomTile = (type == BlockType.GRASS) ? type.tileTop : type.tileSide;
+        // Определяем тайлы и tint
+        int topTile, sideTile, bottomTile, frontTile;
+        float[] tints = new float[6]; // tint для каждой грани (+X, -X, +Y, -Y, +Z, -Z)
 
+        if (type == BlockType.GRASS) {
+            topTile = type.tileTop;    // серая маска
+            sideTile = type.tileSide;
+            bottomTile = type.tileTop;
+            frontTile = type.tileSide;
+            tints[2] = 1f; // +Y (верх)
+            tints[3] = 1f; // -Y (низ)
+        } else if (type == BlockType.LEAVES) {
+            topTile = type.tileSide;
+            sideTile = type.tileSide;
+            bottomTile = type.tileSide;
+            frontTile = type.tileSide;
+            // tint для листьев (все грани)
+            tints[0] = tints[1] = tints[2] = tints[3] = tints[4] = tints[5] = 1f;
+        } else {
+            topTile = type.tileSide;
+            sideTile = type.tileSide;
+            bottomTile = type.tileSide;
+            frontTile = type.tileSide;
+        }
+
+        // 6 граней: +X, -X, +Y, -Y, +Z, -Z
+        int[] faceTiles = {sideTile, sideTile, topTile, bottomTile, frontTile, sideTile};
         float[][][] faces = {
             {{s,-s, s},{s,-s,-s},{s, s,-s},{s, s, s}},     // +X
             {{-s,-s,-s},{-s,-s, s},{-s, s, s},{-s, s,-s}}, // -X
@@ -127,16 +149,14 @@ public class ItemDropSystem {
             {{-s,-s, s},{s,-s, s},{s, s, s},{-s, s, s}},   // +Z
             {{s,-s,-s},{-s,-s,-s},{-s, s,-s},{s, s,-s}}    // -Z
         };
-        int[] faceTiles = {sideTile, sideTile, topTile, bottomTile, sideTile, sideTile};
-        float[] faceTints = {0, 0, 1, 1, 0, 0}; // tint только для верха и низа травы
-
         float[][] uv = {{0,1},{1,1},{1,0},{0,0}};
-        float[] v = new float[6 * 4 * 6]; // 3 pos + 2 uv + 1 tint
+
+        float[] v = new float[6 * 4 * 6]; // pos(3) + uv(2) + tint(1)
         int k = 0;
         for (int f = 0; f < 6; f++) {
             int tile = faceTiles[f];
             float u0 = tile * tu, u1 = u0 + tu;
-            float tint = faceTints[f];
+            float tint = tints[f];
             for (int i = 0; i < 4; i++) {
                 v[k++] = faces[f][i][0];
                 v[k++] = faces[f][i][1];
@@ -149,10 +169,10 @@ public class ItemDropSystem {
 
         GL30.glBindVertexArray(vao);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);
-        FloatBuffer fb = MemoryUtil.memAllocFloat(v.length);
+        FloatBuffer fb = org.lwjgl.system.MemoryUtil.memAllocFloat(v.length);
         fb.put(v).flip();
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, fb, GL15.GL_DYNAMIC_DRAW);
-        MemoryUtil.memFree(fb);
+        org.lwjgl.system.MemoryUtil.memFree(fb);
         GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 6*4, 0L);
         GL20.glEnableVertexAttribArray(0);
         GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 6*4, 3L*4L);
