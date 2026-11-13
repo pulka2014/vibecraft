@@ -158,6 +158,16 @@ public class Chunk {
                 }
             }
 
+            // Растекание воды (на 1 блок в стороны)
+            for (int dx = -radius-1; dx <= radius+1; dx++) {
+                for (int dz = -radius-1; dz <= radius+1; dz++) {
+                    int x = cx + dx, z = cz + dz;
+                    if (inBounds(x, waterLevel, z) && get(x, waterLevel, z) == BlockType.AIR) {
+                        set(x, waterLevel, z, BlockType.WATER);
+                    }
+                }
+            }
+
             // Песок только на уровне воды (не выше)
             for (int dx = -radius-1; dx <= radius+1; dx++) {
                 for (int dz = -radius-1; dz <= radius+1; dz++) {

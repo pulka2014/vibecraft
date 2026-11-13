@@ -670,8 +670,11 @@ public class Main {
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
 
+            boolean playerInWater = gs.world.getBlock((int)Math.floor(gs.player.position.x), (int)Math.floor(gs.player.position.y + 1.5f), (int)Math.floor(gs.player.position.z)) == BlockType.WATER;
+            if (!playerInWater) {
             gs.world.render(proj, gs.player.getViewMatrix(), uProj, uView, uModel, uTex, tex, uSun,
                 gs.time.sunBrightness(), -1, -1, sky[0], sky[1], sky[2], gs.player.position);
+            }
 
             if (mining.isMining() && hit != null) crack.render(hit, mining.getProgress(), proj, gs.player.getViewMatrix(), gs.world);
             highlight.render(hit, proj, gs.player.getViewMatrix(), gs.world);
