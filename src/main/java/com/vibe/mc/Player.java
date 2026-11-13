@@ -79,11 +79,12 @@ public class Player {
             }
         }
         if (inWater) {
-            velocity.y *= 0.8f;
-            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) velocity.y = 5f;
-            if (velocity.y < -2f) velocity.y = -2f;
-            velocity.x *= 0.8f;
-            velocity.z *= 0.8f;
+            velocity.y *= 0.9f;
+            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) velocity.y = 5f; // всплытие
+            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS) velocity.y = -4f; // заныривание
+            if (velocity.y < -3f) velocity.y = -3f;
+            velocity.x *= 0.9f;
+            velocity.z *= 0.9f;
         } else {
             velocity.y += GRAVITY * dt;
         }
