@@ -20,6 +20,9 @@ public class SaveManager {
         public float yaw, pitch;
         public int[][] invSlots = new int[Inventory.TOTAL][3];
         public float timeOfDay = 0.25f;
+        public int health = 20;
+        public int food = 20;
+        public boolean cheats = false;
     }
 
     public static void save(World world, Player player, TimeOfDay time) throws IOException {
@@ -45,6 +48,9 @@ public class SaveManager {
             d.invSlots[j][2] = s.count;
         }
         d.timeOfDay = time.getT();
+        d.health = player.health;
+        d.food = player.food;
+        d.cheats = Cheats.enabled;
 
         if (currentSlot != null) Worlds.ensureDir(currentSlot);
         try (java.util.zip.GZIPOutputStream gz = new java.util.zip.GZIPOutputStream(new BufferedOutputStream(Files.newOutputStream(path())));
@@ -62,6 +68,9 @@ public class SaveManager {
             out.writeFloat(d.yaw); out.writeFloat(d.pitch);
             for (int[] row : d.invSlots) { out.writeInt(row[0]); out.writeInt(row[1]); out.writeInt(row[2]); }
             out.writeFloat(d.timeOfDay);
+            out.writeInt(d.health);
+            out.writeInt(d.food);
+            out.writeBoolean(d.cheats);
         }
         Logger.info("[Save] saved " + World.SIZE + "x" + World.SIZE + " chunks to " + path());
     }
@@ -97,6 +106,9 @@ public class SaveManager {
                 d.invSlots[j][2] = in.readInt();
             }
             d.timeOfDay = in.readFloat();
+            d.health = in.readInt();
+            d.food = in.readInt();
+            d.cheats = in.readBoolean();
             Logger.info("[Save] loaded " + d.chunks.length + " chunks from " + p + " (VERSION " + VERSION + ")");
             return d;
         } catch (IOException e) {
