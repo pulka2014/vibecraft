@@ -27,6 +27,7 @@ public class Main {
         LoadingScreen loadingScreen;
         CheatUI cheatUI;
         HUD hud;
+        WaterOverlay waterOverlay;
         DeathScreen deathScreen;
         boolean loadingScreenActive = false;
         Integer activeSlot = null;
@@ -213,6 +214,7 @@ public class Main {
         gs.loadingScreen = new LoadingScreen(font);
         gs.cheatUI = new CheatUI(font);
         gs.hud = new HUD();
+        gs.waterOverlay = new WaterOverlay();
         gs.deathScreen = new DeathScreen(font);
 
         final long win = window;
@@ -515,6 +517,7 @@ public class Main {
                         gs.loadingScreen = new LoadingScreen(font);
         gs.cheatUI = new CheatUI(font);
         gs.hud = new HUD();
+        gs.waterOverlay = new WaterOverlay();
         gs.deathScreen = new DeathScreen(font);
                         gs.loadingScreen.total.set(World.SIZE * Chunk.SX * World.SIZE * Chunk.SZ);
                         gs.loadingScreen.loaded.set(0);
@@ -671,10 +674,9 @@ public class Main {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex);
 
             boolean playerInWater = gs.world.getBlock((int)Math.floor(gs.player.position.x), (int)Math.floor(gs.player.position.y + 1.5f), (int)Math.floor(gs.player.position.z)) == BlockType.WATER;
-            if (!playerInWater) {
             gs.world.render(proj, gs.player.getViewMatrix(), uProj, uView, uModel, uTex, tex, uSun,
                 gs.time.sunBrightness(), -1, -1, sky[0], sky[1], sky[2], gs.player.position);
-            }
+            
 
             if (mining.isMining() && hit != null) crack.render(hit, mining.getProgress(), proj, gs.player.getViewMatrix(), gs.world);
             highlight.render(hit, proj, gs.player.getViewMatrix(), gs.world);
@@ -683,6 +685,8 @@ public class Main {
             crosshair.render();
             gs.hotbar.render();
             gs.hud.render(gs.player);
+            boolean inWater = gs.world.getBlock((int)Math.floor(gs.player.position.x), (int)Math.floor(gs.player.position.y + 1.5f), (int)Math.floor(gs.player.position.z)) == BlockType.WATER;
+            gs.waterOverlay.render(inWater);
             gs.deathScreen.render();
             gs.invScreen.render();
             gs.craftScreen.render();

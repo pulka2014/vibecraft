@@ -55,9 +55,9 @@ public class Player {
         if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_A) == GLFW.GLFW_PRESS) wish.sub(right);
 
         float speed = walkSpeed;
-        crouching = GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS;
+        crouching = GLFW.glfwGetKey(window, SettingsHolder.get().keyCrouch) == GLFW.GLFW_PRESS;
         if (crouching) speed *= 0.4f;
-        else if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS) speed *= 1.25f;
+        else if (GLFW.glfwGetKey(window, SettingsHolder.get().keyDive) == GLFW.GLFW_PRESS) speed *= 1.25f;
 
         if (wish.lengthSquared() > 0) wish.normalize().mul(speed);
         velocity.x = wish.x;
@@ -81,7 +81,7 @@ public class Player {
         if (inWater) {
             velocity.y *= 0.9f;
             if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_SPACE) == GLFW.GLFW_PRESS) velocity.y = 5f; // всплытие
-            if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS) velocity.y = -4f; // заныривание
+            if (GLFW.glfwGetKey(window, SettingsHolder.get().keyDive) == GLFW.GLFW_PRESS) velocity.y = -4f; // заныривание
             if (velocity.y < -3f) velocity.y = -3f;
             velocity.x *= 0.9f;
             velocity.z *= 0.9f;
