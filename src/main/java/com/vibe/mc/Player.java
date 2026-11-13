@@ -87,6 +87,11 @@ public class Player {
         } else {
             velocity.y += GRAVITY * dt;
         }
+        if (position.y < -10f) {
+            // Если упал ниже мира — ставим на поверхность
+            position.y = 80f;
+            velocity.y = 0;
+        }
         if (velocity.y < -50f) velocity.y = -50f;
         
         // Голод тратится при движении

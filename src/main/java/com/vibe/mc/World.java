@@ -67,6 +67,7 @@ public class World {
     public float collisionHeight(int wx, int wy, int wz) {
         BlockType b = getBlock(wx, wy, wz);
         if (b == BlockType.AIR) return 0f;
+        if (b == BlockType.WATER) return 0f; // вода не блокирует
         if (b == BlockType.PRESSURE_PLATE) return 1f / 16f;
         return 1f;
     }

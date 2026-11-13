@@ -202,7 +202,7 @@ public class Main {
         gs.world = World.empty(12345);
         gs.world.drops.setItemAtlas(itemTex);
         gs.player = new Player();
-                    gs.player.position.set(World.SIZE * Chunk.SX / 2f + 0.5f, 70f, World.SIZE * Chunk.SZ / 2f + 0.5f);
+                    // gs.player.position.set(World.SIZE * Chunk.SX / 2f + 0.5f, 70f, World.SIZE * Chunk.SZ / 2f + 0.5f);
                     gs.player.yaw = 0f;
                     gs.player.pitch = 0f;
         gs.time = new TimeOfDay();
@@ -598,7 +598,7 @@ public class Main {
                 if (GLFW.glfwGetKey(window, GLFW.GLFW_KEY_ENTER) == GLFW.GLFW_PRESS) {
                     gs.player.health = 20;
                     gs.player.food = 20;
-                    gs.player.position.set(World.SIZE * Chunk.SX / 2f, 70f, World.SIZE * Chunk.SZ / 2f);
+                    // gs.player.position.set(World.SIZE * Chunk.SX / 2f, 70f, World.SIZE * Chunk.SZ / 2f);
                     gs.deathScreen.close();
                     GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
                 }
