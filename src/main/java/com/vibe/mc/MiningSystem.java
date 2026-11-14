@@ -21,7 +21,7 @@ public class MiningSystem {
         }
 
         BlockType block = world.getBlock(bx, by, bz);
-        if (block == BlockType.AIR) { reset(); return false; }
+        if (block == BlockType.AIR || block == BlockType.WATER) { reset(); return false; }
 
         // скорость
         float speed = 1f; // рука

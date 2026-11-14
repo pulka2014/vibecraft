@@ -166,6 +166,8 @@ public class MainMenu {
                             case 3 -> st.renderDistance = Math.min(200, st.renderDistance + 20);
                             case 4 -> st.mouseSensitivity = Math.max(0.02f, st.mouseSensitivity - 0.02f);
                             case 5 -> st.mouseSensitivity = Math.min(0.40f, st.mouseSensitivity + 0.02f);
+                            case 6 -> { st.keyCrouch = (st.keyCrouch == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL) ? org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_ALT : org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL; }
+                            case 7 -> { st.keyDive = (st.keyDive == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) ? org.lwjgl.glfw.GLFW.GLFW_KEY_C : org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT; }
                         }
                         st.save();
                         return;
@@ -203,6 +205,7 @@ public class MainMenu {
             {-0.32f, 0.20f}, {0.02f, 0.20f},
             {-0.32f, 0.10f}, {0.02f, 0.10f},
             {-0.32f, 0.00f}, {0.02f, 0.00f},
+            {-0.32f, -0.10f}, {0.02f, -0.10f}, // новые: Crouch / Dive
         };
         float[][] out = new float[pos.length][];
         for (int i = 0; i < pos.length; i++) out[i] = new float[]{ pos[i][0], pos[i][1], pos[i][0]+w, pos[i][1]+h };
@@ -363,6 +366,9 @@ public class MainMenu {
         }
         String info = String.format("FOV %.0f   Dist %d   Sens %.2f", st.fov, st.renderDistance, st.mouseSensitivity);
         font.drawString(info, -font.width(info, 0.03f)/2f, -0.50f, 0.03f);
+        // Подписи клавиш
+        font.drawString("Crouch: " + (st.keyCrouch == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL ? "LCTRL" : "LALT"), -0.32f, -0.10f + 0.04f + 0.03f, 0.025f);
+        font.drawString("Dive: " + (st.keyDive == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT ? "LSHIFT" : "C"), 0.02f, -0.10f + 0.04f + 0.03f, 0.025f);
         float[] back = backRect();
         float ch = 0.035f;
         font.drawString("Back", (back[0]+back[2])/2f - font.width("Back", ch)/2f, (back[1]+back[3])/2f + ch/2f, ch);
