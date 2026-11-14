@@ -193,6 +193,7 @@ public class MainMenu {
     }
 
     public boolean onKeyPress(int key) {
+        System.out.println("[MainMenu] onKeyPress called with key=" + key);
         if (waitingForKey == 0) return false;
         Settings st = SettingsHolder.get();
         if (waitingForKey == 1) { st.keyCrouch = key; }

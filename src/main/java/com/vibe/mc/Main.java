@@ -687,6 +687,7 @@ public class Main {
             gs.hud.render(gs.player);
             boolean inWater = gs.world.getBlock((int)Math.floor(gs.player.position.x), (int)Math.floor(gs.player.position.y + 1.5f), (int)Math.floor(gs.player.position.z)) == BlockType.WATER;
             gs.waterOverlay.render(inWater);
+            System.out.println("[WaterOverlay] inWater=" + inWater);
             gs.deathScreen.render();
             gs.invScreen.render();
             gs.craftScreen.render();
