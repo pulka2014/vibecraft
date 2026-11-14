@@ -26,6 +26,7 @@ public class MainMenu {
     private String pendingAction = null;
     private final String splash = pickSplash();
     private int confirmDeleteSlot = 0;
+    private int waitingForKey = 0; // 0 = нет, 1 = Crouch, 2 = Dive
 
     private static final String VERT = """
         #version 330 core
@@ -166,8 +167,8 @@ public class MainMenu {
                             case 3 -> st.renderDistance = Math.min(200, st.renderDistance + 20);
                             case 4 -> st.mouseSensitivity = Math.max(0.02f, st.mouseSensitivity - 0.02f);
                             case 5 -> st.mouseSensitivity = Math.min(0.40f, st.mouseSensitivity + 0.02f);
-                            case 6 -> { st.keyCrouch = (st.keyCrouch == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL) ? org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_ALT : org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL; }
-                            case 7 -> { st.keyDive = (st.keyDive == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) ? org.lwjgl.glfw.GLFW.GLFW_KEY_C : org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT; }
+                            case 6 -> { waitingForKey = 1; }
+                            case 7 -> { waitingForKey = 2; }
                         }
                         st.save();
                         return;
@@ -190,6 +191,18 @@ public class MainMenu {
             }
         }
     }
+
+    public boolean onKeyPress(int key) {
+        if (waitingForKey == 0) return false;
+        Settings st = SettingsHolder.get();
+        if (waitingForKey == 1) { st.keyCrouch = key; }
+        else if (waitingForKey == 2) { st.keyDive = key; }
+        st.save();
+        waitingForKey = 0;
+        return true;
+    }
+
+    public boolean isWaitingForKey() { return waitingForKey != 0; }
 
     public void rightClick() {
         if (screen != Screen.SINGLEPLAYER || confirmDeleteSlot > 0) return;
@@ -367,8 +380,10 @@ public class MainMenu {
         String info = String.format("FOV %.0f   Dist %d   Sens %.2f", st.fov, st.renderDistance, st.mouseSensitivity);
         font.drawString(info, -font.width(info, 0.03f)/2f, -0.50f, 0.03f);
         // Подписи клавиш
-        font.drawString("Crouch: " + (st.keyCrouch == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL ? "LCTRL" : "LALT"), -0.32f, -0.10f + 0.04f + 0.03f, 0.025f);
-        font.drawString("Dive: " + (st.keyDive == org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT ? "LSHIFT" : "C"), 0.02f, -0.10f + 0.04f + 0.03f, 0.025f);
+        String crouchText = (waitingForKey == 1) ? "Press any key..." : "Crouch: " + org.lwjgl.glfw.GLFW.glfwGetKeyName(st.keyCrouch, 0);
+        String diveText = (waitingForKey == 2) ? "Press any key..." : "Dive: " + org.lwjgl.glfw.GLFW.glfwGetKeyName(st.keyDive, 0);
+        font.drawString(crouchText, -0.32f, -0.10f + 0.04f + 0.03f, 0.025f);
+        font.drawString(diveText, 0.02f, -0.10f + 0.04f + 0.03f, 0.025f);
         float[] back = backRect();
         float ch = 0.035f;
         font.drawString("Back", (back[0]+back[2])/2f - font.width("Back", ch)/2f, (back[1]+back[3])/2f + ch/2f, ch);
